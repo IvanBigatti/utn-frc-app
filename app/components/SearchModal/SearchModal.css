@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+        .overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 200;
+          animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+          from { opacity: 0; transform: translate(-50%, -46%); }
+          to   { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .modal {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: #ffffff;
+          border-radius: 16px;
+          padding: 2rem;
+          z-index: 201;
+          width: 90%;
+          max-width: 460px;
+          box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+          font-family: 'Inter', sans-serif;
+          animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal__header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 1.75rem;
+        }
+
+        .modal__header h2 {
+          font-size: 1.15rem;
+          font-weight: 600;
+          color: #1e293b;
+          margin: 0;
+        }
+
+        .modal__close {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: #f1f5f9;
+          border-radius: 8px;
+          cursor: pointer;
+          color: #64748b;
+          font-size: 1rem;
+          transition: background 0.15s, color 0.15s;
+        }
+
+        .modal__close:hover {
+          background: #e2e8f0;
+          color: #1e293b;
+        }
+
+        .modal__fields {
+          display: flex;
+          flex-direction: column;
+          gap: 1.1rem;
+          margin-bottom: 1.75rem;
+        }
+
+        .modal__field {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+
+        .modal__field label {
+          font-size: 0.8rem;
+          font-weight: 500;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .modal__field select {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 100%;
+          padding: 0.65rem 2.5rem 0.65rem 0.9rem;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 10px;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.9rem;
+          color: #1e293b;
+          background-color: #f8fafc;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 0.75rem center;
+          cursor: pointer;
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .modal__field select:focus {
+          border-color: #003087;
+          box-shadow: 0 0 0 3px rgba(0, 48, 135, 0.08);
+          background-color: #fff;
+        }
+
+        .modal__field select:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .modal__btn {
+          width: 100%;
+          padding: 0.8rem;
+          background: #003087;
+          color: white;
+          border: none;
+          border-radius: 10px;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.15s, transform 0.1s;
+        }
+
+        .modal__btn:hover:not(:disabled) {
+          background: #00205c;
+        }
+
+        .modal__btn:active:not(:disabled) {
+          transform: scale(0.99);
+        }
+
+        .modal__btn:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
