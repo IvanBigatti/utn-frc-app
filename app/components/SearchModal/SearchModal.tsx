@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supaBaseClient.js";
-import "./SearchModal.css"
+import "./SearchModal.css";
 
-// ─── Tipos ─────────────────────────────────────────────────────────────────
 type Ingenieria = { id: number; nombre: string };
 type Materia = { id: number; nombre: string };
 
@@ -14,7 +13,6 @@ type Props = {
   onClose: () => void;
 };
 
-// ─── Componente ────────────────────────────────────────────────────────────
 export default function SearchModal({ isOpen, onClose }: Props) {
   const router = useRouter();
   const [ingenierias, setIngenierias] = useState<Ingenieria[]>([]);
@@ -27,82 +25,57 @@ export default function SearchModal({ isOpen, onClose }: Props) {
   const [loadingIngenierias, setLoadingIngenierias] = useState(false);
   const [loadingMaterias, setLoadingMaterias] = useState(false);
 
-  // ── Cargar ingenierías al abrir el modal ──────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
-
     const fetchIngenierias = async () => {
       setLoadingIngenierias(true);
-
       const { data, error } = await supabase
         .from("ingenieria")
         .select("id, nombre")
         .order("nombre");
-
-      console.log("Ingenierías:", data);
-      console.log("Error ingenierías:", error);
-
       if (!error && data) setIngenierias(data);
       setLoadingIngenierias(false);
     };
-
     fetchIngenierias();
   }, [isOpen]);
 
-  // ── Cargar materias cuando cambia la carrera ──────────────────────────────
-useEffect(() => {
-  // Ahora necesita AMBOS: carreraId y anio
-  if (!carreraId || !anio) {
-    setMaterias([]);
-    return;
-  }
-
-  const fetchMaterias = async () => {
-    setLoadingMaterias(true);
-
-    // Paso 1: comisiones filtradas por ingeniería Y año
-    const { data: comisiones } = await supabase
-      .from("comision")
-      .select("id")
-      .eq("ingenieria_id", carreraId)
-      .eq("año", anio); // ← filtro extra
-
-    if (!comisiones || comisiones.length === 0) {
+  useEffect(() => {
+    if (!carreraId || !anio) {
       setMaterias([]);
-      setLoadingMaterias(false);
       return;
     }
+    const fetchMaterias = async () => {
+      setLoadingMaterias(true);
+      const { data: comisiones } = await supabase
+        .from("comision")
+        .select("id")
+        .eq("ingenieria_id", carreraId)
+        .eq("año", anio);
 
-    const idsComisiones = comisiones.map((c) => c.id);
+      if (!comisiones || comisiones.length === 0) {
+        setMaterias([]);
+        setLoadingMaterias(false);
+        return;
+      }
+      const idsComisiones = comisiones.map((c) => c.id);
+      const { data: relaciones } = await supabase
+        .from("ComisionMaterias")
+        .select("idComision, materia(id, nombre)")
+        .in("idComision", idsComisiones);
 
-    // Paso 2: materias de esas comisiones
-    const { data: relaciones } = await supabase
-      .from("ComisionMaterias")
-      .select("idComision, materia(id, nombre)")
-      .in("idComision", idsComisiones);
+      if (!relaciones) { setMaterias([]); setLoadingMaterias(false); return; }
 
-    if (!relaciones) {
-      setMaterias([]);
+      const todasLasMaterias = relaciones.map((r: any) => r.materia).filter(Boolean);
+      const unicas = Array.from(
+        new Map(todasLasMaterias.map((m: Materia) => [m.id, m])).values()
+      ) as Materia[];
+
+      setMaterias(unicas.sort((a, b) => a.nombre.localeCompare(b.nombre)));
       setLoadingMaterias(false);
-      return;
-    }
+    };
+    fetchMaterias();
+  }, [carreraId, anio]);
 
-    const todasLasMaterias = relaciones
-      .map((r: any) => r.materia)
-      .filter(Boolean);
-
-    const unicas = Array.from(
-      new Map(todasLasMaterias.map((m: Materia) => [m.id, m])).values()
-    ) as Materia[];
-
-    setMaterias(unicas.sort((a, b) => a.nombre.localeCompare(b.nombre)));
-    setLoadingMaterias(false);
-  };
-
-  fetchMaterias();
-}, [carreraId, anio]); // ← depende de ambos ahora
-
-  // ── Cerrar y resetear ─────────────────────────────────────────────────────
   const handleClose = () => {
     setCarreraId(null);
     setMateriaId(null);
@@ -121,11 +94,7 @@ useEffect(() => {
 
   return (
     <>
-
-      {/* Fondo oscuro */}
       <div className="overlay" onClick={handleClose} />
-
-      {/* Ventana */}
       <div className="modal">
         <div className="modal__header">
           <h2>Buscar material</h2>
@@ -134,79 +103,94 @@ useEffect(() => {
 
         <div className="modal__fields">
 
-          {/* Filtro 1: Ingeniería */}
+          {/* Filtro 1: Carrera */}
           <div className="modal__field">
             <label>Carrera</label>
-            <select
-              value={carreraId ?? ""}
-              onChange={(e) => {
-                setCarreraId(Number(e.target.value) || null);
-                setMateriaId(null);
-                setAnio(null);
-              }}
-            >
-              <option value="">
-                {loadingIngenierias ? "Cargando..." : "Seleccioná una carrera"}
-              </option>
-              {ingenierias.map((ing) => (
-                <option key={ing.id} value={ing.id}>
-                  {ing.nombre}
-                </option>
-              ))}
-            </select>
+            {loadingIngenierias ? (
+              <p className="modal__loading">Cargando carreras...</p>
+            ) : (
+              <div className="tag-group">
+                {ingenierias.map((ing) => (
+                  <button
+                    key={ing.id}
+                    className={`animated-button ${carreraId === ing.id ? "active" : ""}`}
+                    onClick={() => {
+                      setCarreraId(ing.id === carreraId ? null : ing.id);
+                      setAnio(null);
+                      setMateriaId(null);
+                    }}
+                  >
+                    <span className="circle" />
+                    <span className="text">{ing.nombre}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Filtro 2: Año (aparece al elegir carrera) */}
-        {carreraId && (
-        <div className="modal__field">
-            <label>Año</label>
-            <select
-            value={anio ?? ""}
-            onChange={(e) => {
-                setAnio(Number(e.target.value) || null);
-                setMateriaId(null); // resetea materia al cambiar año
-            }}
-            >
-            <option value="">Seleccioná el año</option>
-            {[1, 2, 3, 4, 5].map((a) => (
-                <option key={a} value={a}>{a}° Año</option>
-            ))}
-            </select>
-        </div>
-        )}
+          {/* Filtro 2: Año */}
+          {carreraId && (
+            <div className="modal__field">
+              <label>Año</label>
+              <div className="tag-group">
+                {[1, 2, 3, 4, 5].map((a) => (
+                  <button
+                    key={a}
+                    className={`animated-button ${anio === a ? "active" : ""}`}
+                    onClick={() => {
+                      setAnio(a === anio ? null : a);
+                      setMateriaId(null);
+                    }}
+                  >
+                    <span className="circle" />
+                    <span className="text">{a}° Año</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-        {/* Filtro 3: Materia (aparece solo cuando hay carrera Y año) */}
-        {carreraId && anio && (
-        <div className="modal__field">
-            <label>Materia</label>
-            <select
-            value={materiaId ?? ""}
-            onChange={(e) => setMateriaId(Number(e.target.value) || null)}
-            disabled={loadingMaterias}
-            >
-            <option value="">
-                {loadingMaterias ? "Cargando materias..." : "Seleccioná una materia"}
-            </option>
-            {materias.map((mat) => (
-                <option key={mat.id} value={mat.id}>
-                {mat.nombre}
-                </option>
-            ))}
-            </select>
-        </div>
-        )}
+          {/* Filtro 3: Materia */}
+          {carreraId && anio && (
+            <div className="modal__field">
+              <label>Materia</label>
+              {loadingMaterias ? (
+                <p className="modal__loading">Cargando materias...</p>
+              ) : (
+                <div className="tag-group">
+                  {materias.map((mat) => (
+                    <button
+                      key={mat.id}
+                      className={`animated-button ${materiaId === mat.id ? "active" : ""}`}
+                      onClick={() => setMateriaId(mat.id === materiaId ? null : mat.id)}
+                    >
+                      <span className="circle" />
+                      <span className="text">{mat.nombre}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-        </div>
+           {carreraId && anio && materiaId && (
+            <div>
+              <button
+                className="button"
+                onClick={handleBuscar}
+                disabled={!materiaId}
+              >
+                <span>
+                  <svg viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9.145 18.29c-5.042 0-9.145-4.102-9.145-9.145s4.103-9.145 9.145-9.145 9.145 4.103 9.145 9.145-4.102 9.145-9.145 9.145zm0-15.167c-3.321 0-6.022 2.702-6.022 6.022s2.702 6.022 6.022 6.022 6.023-2.702 6.023-6.022-2.702-6.022-6.023-6.022zm9.263 12.443c-.817 1.176-1.852 2.188-3.046 2.981l5.452 5.453 3.014-3.013-5.42-5.421z" />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          )}
 
-        {/* Botón buscar */}
-        <button
-          className="modal__btn"
-          onClick={handleBuscar}
-          disabled={!materiaId}
-        >
-          Buscar
-        </button>
-      </div>
+        </div> 
+      </div>   
     </>
   );
 }
