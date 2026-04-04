@@ -1,0 +1,211 @@
+/* ── Fuentes ─────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap');
+
+
+/* ── Página ──────────────────────────────────────── */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f3;
+  padding: 24px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Contenedor ──────────────────────────────────── */
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ── Título ──────────────────────────────────────── */
+.login-title {
+  text-align: center;
+}
+
+.login-title h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: #0a0a0a;
+  margin: 0 0 6px;
+  letter-spacing: -0.5px;
+  font-weight: 400;
+}
+
+.login-title p {
+  font-size: 13px;
+  color: #999;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* ── Card ────────────────────────────────────────── */
+.login-card {
+  background: #ffffff;
+  border: 1px solid #e8e8e4;
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Botón Google ────────────────────────────────── */
+.login-google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-color: #e0e0dc;
+  color: #555;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ccc;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  width: 100%;
+}
+
+.login-google-btn:hover {
+  border-color: #bbb;
+  color: #111;
+}
+
+/* ── Divider ─────────────────────────────────────── */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-divider__line {
+  flex: 1;
+  height: 1px;
+  background: #ebebeb;
+}
+
+.login-divider__text {
+  font-size: 11px;
+  color: #ccc;
+  letter-spacing: 0.05em;
+}
+
+/* ── Formulario ──────────────────────────────────── */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Campo ───────────────────────────────────────── */
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-field label {
+  font-size: 11px;
+  color: #aaa;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-field input {
+  background: #f8f8f6;
+  border: 1px solid #e8e8e4;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #0a0a0a;
+  outline: none;
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-field input::placeholder {
+  color: #bbb;
+}
+
+.login-field input:focus {
+  border-color: #bbb;
+}
+
+/* ── Mensajes de error / éxito ───────────────────── */
+.login-error {
+  font-size: 12px;
+  color: #e05555;
+  margin: 0;
+}
+
+.login-success {
+  font-size: 12px;
+  color: #5a9e6f;
+  margin: 0;
+}
+
+/* ── Botón submit ────────────────────────────────── */
+.login-submit-btn {
+  margin-top: 4px;
+  width: 100%;
+  background: #0a0a0a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.login-submit-btn:hover:not(:disabled) {
+  background: #222;
+}
+
+.login-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Toggle login/register ───────────────────────── */
+.login-toggle {
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+  margin: 0;
+}
+
+.login-toggle__btn {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+
+.login-toggle__btn:hover {
+  color: #111;
+}
+
+.login-field input.input-error {
+  border-color: #e05555;
+}
