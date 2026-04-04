@@ -5,12 +5,10 @@ import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/app/action
 
 type ActionResult = { error?: string; message?: string } | undefined
 
-const initialState: ActionResult = undefined
-
 export default function LoginForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
-  const [loginState, loginAction, loginPending] = useActionState(signInWithEmail, initialState)
-  const [registerState, registerAction, registerPending] = useActionState(signUpWithEmail, initialState)
+  const [loginState, loginAction, loginPending] = useActionState(signInWithEmail, undefined)
+  const [registerState, registerAction, registerPending] = useActionState(signUpWithEmail, undefined)
 
   const isLogin = mode === 'login'
 
@@ -75,7 +73,6 @@ export default function LoginForm() {
             />
           </div>
 
-          {/* Mensajes de error/éxito */}
           {isLogin && loginState?.error && (
             <p className="text-sm text-red-600 dark:text-red-400">{loginState.error}</p>
           )}
@@ -93,9 +90,7 @@ export default function LoginForm() {
           >
             {loginPending || registerPending
               ? 'Cargando...'
-              : isLogin
-              ? 'Iniciar sesión'
-              : 'Crear cuenta'}
+              : isLogin ? 'Iniciar sesión' : 'Crear cuenta'}
           </button>
         </form>
 

@@ -4,7 +4,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/server'
 import { headers } from 'next/headers'
 
-export async function signInWithEmail(formData: FormData) {
+type ActionResult = { error?: string; message?: string } | undefined
+
+export async function signInWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -12,14 +14,12 @@ export async function signInWithEmail(formData: FormData) {
     password: formData.get('password') as string,
   })
 
-  if (error) {
-    return { error: error.message }
-  }
+  if (error) return { error: error.message }
 
   redirect('/')
 }
 
-export async function signUpWithEmail(formData: FormData) {
+export async function signUpWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
   const headerStore = await headers()
   const origin = headerStore.get('origin')
@@ -32,9 +32,7 @@ export async function signUpWithEmail(formData: FormData) {
     },
   })
 
-  if (error) {
-    return { error: error.message }
-  }
+  if (error) return { error: error.message }
 
   return { message: 'Revisá tu email para confirmar tu cuenta.' }
 }
@@ -51,9 +49,7 @@ export async function signInWithGoogle() {
     },
   })
 
-  if (error) {
-    return { error: error.message }
-  }
+  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`)
 
   redirect(data.url)
 }
