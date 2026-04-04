@@ -16,6 +16,12 @@ export default async function Navbar() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              <Link
+                href="/upload"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hidden sm:block"
+              >
+                Subir material
+              </Link>
               <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                 {user.email}
               </span>

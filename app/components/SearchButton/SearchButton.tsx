@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import SearchModal from "../SearchModal/SearchModal.tsx";
+import SearchModal from "../SearchModal/SearchModal";
 import "./SearchButton.css";
 import { supabase } from "@/app/lib/supaBaseClient.js";
 

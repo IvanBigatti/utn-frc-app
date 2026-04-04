@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supaBaseClient.js";
 import "./SearchModal.css"
 
@@ -15,6 +16,7 @@ type Props = {
 
 // ─── Componente ────────────────────────────────────────────────────────────
 export default function SearchModal({ isOpen, onClose }: Props) {
+  const router = useRouter();
   const [ingenierias, setIngenierias] = useState<Ingenieria[]>([]);
   const [materias, setMaterias] = useState<Materia[]>([]);
 
@@ -110,10 +112,8 @@ useEffect(() => {
   };
 
   const handleBuscar = () => {
-    if (!carreraId) return;
-    console.log("Buscar:", { carreraId, materiaId, anio });
-    // TODO: reemplazá esto con tu lógica de búsqueda
-    // router.push(`/resultados?carrera=${carreraId}&materia=${materiaId}&anio=${anio}`);
+    if (!materiaId) return;
+    router.push(`/resultados?materia_id=${materiaId}&carrera_id=${carreraId}&anio=${anio}`);
     handleClose();
   };
 
@@ -202,7 +202,7 @@ useEffect(() => {
         <button
           className="modal__btn"
           onClick={handleBuscar}
-          disabled={!carreraId}
+          disabled={!materiaId}
         >
           Buscar
         </button>

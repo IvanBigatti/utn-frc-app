@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
