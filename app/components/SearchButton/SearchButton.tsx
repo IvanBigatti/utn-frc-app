@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import SearchModal from "../SearchModal/SearchModal";
 import "./SearchButton.css";
 import { supabase } from "@/app/lib/supaBaseClient.js";
+import Link from "next/link";
 
 export default function SearchButton() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -82,7 +83,7 @@ export default function SearchButton() {
           <p className="features__desc">Accedé a resúmenes y apuntes subidos por estudiantes de cada materia de todas las ingenierias.</p>
         </div>
 
-        <div className="features__card">
+        <Link href="/foro" className="features__card">
           <div className="features__icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -90,7 +91,7 @@ export default function SearchButton() {
           </div>
           <h3 className="features__title">Foro</h3>
           <p className="features__desc">Consulta y comparte las experiencias de las materias que cursaste en distintas comisiones.</p>
-        </div>
+        </Link>
 
         <div className="features__card">
           <div className="features__icon">
