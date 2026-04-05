@@ -9,6 +9,7 @@ import Link from "next/link";
 export default function SearchButton() {
   const [modalOpen, setModalOpen] = useState(false);
   const [materiasBasicas, setMateriasBasicas] = useState<{ id: number, nombre: string }[]>([]);
+  const [totalArchivos, setTotalArchivos] = useState(0)
 
   useEffect(() => {
     const fetchMateriasBasicas = async () => {
@@ -21,6 +22,19 @@ export default function SearchButton() {
     };
     fetchMateriasBasicas();
   }, []);
+
+
+  //funcion contador de archivos totales
+  useEffect(()=> {
+    const fetchTotalArchivos = async () => {
+      const res = await supabase.from("archivos").select("id")
+      const data = res.data
+      console.log("Total archivos:",data?.length)
+      setTotalArchivos(data?.length)
+    }
+
+    fetchTotalArchivos()
+  }, [])
 
   return (
     <>
@@ -109,6 +123,8 @@ export default function SearchButton() {
           <p className="features__desc">Arma tu horario de manera dinamica y sencilla en nuestro Armador.</p>
         </div>
       </section>
+
+      
 
       <SearchModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </>
