@@ -105,7 +105,7 @@ export default function SearchButton() {
               <circle cx="16" cy="15" r="1" fill="currentColor" />
             </svg>
           </div>
-          <h3 className="features__title">Horarios</h3>
+          <h3 className="features__title">Armador de Horarios</h3>
           <p className="features__desc">Arma tu horario de manera dinamica y sencilla en nuestro Armador.</p>
         </div>
       </section>

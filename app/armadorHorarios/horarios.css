@@ -1,18 +1,27 @@
 /* ── Layout general ─────────────────────────────────────────── */
 .horarios-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem;
-  font-family: var(--font-sans, system-ui, sans-serif);
+   display: flex;
+  flex-direction: row;
+  gap: 0;
+  min-height: 100vh;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 /* ── Panel selector ─────────────────────────────────────────── */
 .horarios-selector {
+  width: 340px;
+  min-width: 280px;
+  max-width: 340px;
+  flex-shrink: 0;
+  padding: 32px 24px;
+  border-right: 1px solid #e8e8e4;
+  overflow-y: auto;
+  height: 100vh;
+  position: sticky;
+  top: 0;
   background: #fff;
-  border: 0.5px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 1.25rem 1.5rem;
 }
 
 .horarios-selector__header {
@@ -168,9 +177,9 @@
 
 .horarios-empty {
   font-size: 13px;
-  color: #9ca3af;
-  padding: 2rem;
+  color: #aaa;
   text-align: center;
+  margin-top: 80px;
 }
 
 .horarios-error {
@@ -189,89 +198,218 @@
   border: 0.5px solid #e5e7eb;
   border-radius: 14px;
   overflow: hidden;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  padding: 32px 24px;
+  background: #fafaf8;
 }
 
 /* ── Grilla ─────────────────────────────────────────────────── */
 .horarios-grilla {
   display: grid;
-  grid-template-columns: 52px repeat(6, minmax(110px, 1fr));
-  min-width: 720px;
+  grid-template-columns: 52px repeat(6, 1fr);
+  min-width: 600px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e8e8e4;
 }
 
 .horarios-grilla__corner {
-  background: #f9fafb;
-  border-right: 0.5px solid #e5e7eb;
-  border-bottom: 0.5px solid #e5e7eb;
+  background: #f8f8f6;
+  border-bottom: 1.5px solid #e8e8e4;
+  border-right: 1px solid #e8e8e4;
+  position: sticky;
+  left: 0;
+  z-index: 10;
 }
 
 .horarios-grilla__dia {
+  background: #f8f8f6;
+  border-bottom: 1.5px solid #e8e8e4;
+  border-right: 1px solid #efefed;
+  padding: 10px 4px;
   font-size: 11px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: #f9fafb;
+  font-weight: 700;
   text-align: center;
-  padding: 8px 4px;
-  border-right: 0.5px solid #e5e7eb;
-  border-bottom: 0.5px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .horarios-grilla__hora {
-  font-size: 10px;
-  color: #9ca3af;
-  background: #f9fafb;
-  border-right: 0.5px solid #e5e7eb;
-  border-bottom: 0.5px solid #e5e7eb;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 3px 5px 0;
+  background: #fafaf8;
+  border-bottom: 1px solid #f0f0ee;
+  border-right: 1px solid #e8e8e4;
+  padding: 3px 6px 0;
+  font-size: 9px;
+  color: #ccc;
+  text-align: right;
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  z-index: 5;
 }
 
 .horarios-grilla__celda {
-  border-right: 0.5px solid #e5e7eb;
-  border-bottom: 0.5px solid #e5e7eb;
+  border-bottom: 1px solid #f5f5f3;
+  border-right: 1px solid #f0f0ee;
   position: relative;
-  overflow: visible;
+  transition: background 0.15s;
 }
 
-/* ── Bloques ─────────────────────────────────────────────────── */
+.horarios-grilla__celda:hover {
+  background: #f8f8f6;
+}
+
 .horarios-bloque {
-  position: absolute;
-  border-radius: 5px;
-  border: 1px solid;
+  border-radius: 6px;
+  border: 1.5px solid;
+  padding: 3px 5px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.horarios-bloque:hover {
+  transform: scale(1.01);
+  z-index: 10 !important;
+}
+
+.horarios-bloque.picked {
+  border-width: 2px;
+}
+
+.horarios-bloque__mat {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.horarios-bloque__com {
+  font-size: 11px;
+  opacity: 0.75;
+  white-space: normal;
+  font-weight: 500;
+}
+
+.horarios-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  color: #bbb;
+  font-size: 13px;
   text-align: center;
-  padding: 2px 4px;
-  overflow: hidden;
+}
+
+.horarios-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.horarios-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 12px;
   cursor: pointer;
-  transition: transform 0.1s, opacity 0.15s;
+  transition: opacity 0.2s;
+  background: #fafaf8;
 }
 
-.horarios-bloque:hover {
-  transform: scale(1.04);
-  z-index: 20 !important;
+.horarios-legend__item:hover { opacity: 0.7; }
+
+.horarios-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  flex-shrink: 0;
 }
 
-.horarios-bloque.picked {
-  z-index: 5;
+.horarios-error {
+  font-size: 12px;
+  color: #e05555;
+  background: #fff5f5;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0;
 }
 
-.horarios-bloque__mat {
-  font-size: 9px;
+.horarios-filtro__hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  color: #1f387e;
+}
+
+.horarios-tag__comision {
+  font-weight: 400;
+  font-size: 11px;
+}
+
+.sin-horario {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+
+.horarios-tag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.horarios-tag-block {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #e8e8e4;
+  background: #fafaf8;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 600;
-  line-height: 1.2;
+  color: #1f387e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.horarios-bloque__com {
-  font-size: 9px;
-  opacity: 0.75;
-  margin-top: 1px;
+.horarios-tag-block:hover {
+  border-color: #a0b0d8;
+  background: #f5f7fd;
+}
+
+.horarios-tag-block.active {
+  background: #1f387e;
+  border-color: #1f387e;
+  color: #fff;
+}
+
+.horarios-tag-block.agregada {
+  border-width: 1.5px;
+}
+
+.horarios-tag-block.sin-horario {
+  opacity: 0.35;
+  cursor: not-allowed;
 }

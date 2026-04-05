@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supaBaseClient.js";
 import "./horarios.css";
+
 
 const DIAS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
 
@@ -41,7 +42,7 @@ type Pick = {
 
 function franjaIdx(t: string) { return FRANJAS.indexOf(t); }
 function toMin(t: string) { const [h, m] = t.split(":").map(Number); return h * 60 + (m ?? 0); }
-function slotPx(i: number) { return Math.max(20, (toMin(FRANJAS[i + 1]) - toMin(FRANJAS[i])) * 1.3); }
+function slotPx(i: number) { return Math.max(14, (toMin(FRANJAS[i + 1]) - toMin(FRANJAS[i])) * 0.7); }
 function calcBlockHeight(startIdx: number, endIdx: number) {
   let total = 0;
   for (let i = startIdx; i < endIdx && i < FRANJAS.length - 1; i++) total += slotPx(i);
@@ -51,7 +52,7 @@ function horariosOverlap(a: Horario[], b: Horario[]): boolean {
   for (const h1 of a) for (const h2 of b) {
     if (h1.dia !== h2.dia) continue;
     if (franjaIdx(h1.hora_inicio) < franjaIdx(h2.hora_fin) &&
-        franjaIdx(h2.hora_inicio) < franjaIdx(h1.hora_fin)) return true;
+      franjaIdx(h2.hora_inicio) < franjaIdx(h1.hora_fin)) return true;
   }
   return false;
 }
@@ -74,7 +75,7 @@ export default function HorariosPage() {
       });
   }, []);
 
- useEffect(() => {
+  useEffect(() => {
     if (!carreraId || !anio) { setMaterias([]); return; }
     const fetch = async () => {
       setLoadingMaterias(true);
@@ -123,7 +124,15 @@ export default function HorariosPage() {
     setTimeout(() => setErrorMsg(""), 3000);
   }
   function getColor(materiaId: number) {
-    const idx = materias.findIndex((m) => m.id === materiaId);
+    // Primero buscamos en materias actuales
+    let idx = materias.findIndex((m) => m.id === materiaId);
+
+    // Si no está en materias actuales, usamos el colorIdx guardado en el pick
+    if (idx === -1) {
+      const pick = picks.get(materiaId);
+      idx = pick?.colorIdx ?? 0;
+    }
+
     return PALETTE[idx % PALETTE.length];
   }
   function conflictsWith(materiaId: number, horarios: Horario[]): string | null {
@@ -151,23 +160,52 @@ export default function HorariosPage() {
     if (activaMatId === materiaId) setActivaMatId(null);
   }
   function resetCarrera() {
-    setCarreraId(null); setAnio(null); setMaterias([]);
-    setActivaMatId(null); setPicks(new Map());
+    setCarreraId(null);
+    setAnio(null);
+    setMaterias([]);
+    setActivaMatId(null);
+    // ← sin setPicks(new Map()) acá también
   }
 
   function getBloquesEnCelda(dia: string, fi: number) {
-    const resultado: { type: "pick" | "candidate"; materia: MateriaConComisiones; comision: Comision; horario: Horario; isPicked: boolean; isDimmed: boolean; }[] = [];
+    const resultado: {
+      type: "pick" | "candidate";
+      materia: MateriaConComisiones;
+      comision: Comision;
+      horario: Horario;
+      isPicked: boolean;
+      isDimmed: boolean;
+    }[] = [];
+
+    // Renders picks directamente desde el pick, sin depender de materias
     for (const [matId, pick] of picks) {
       if (matId === activaMatId) continue;
-      const mat = materias.find((m) => m.id === matId);
-      if (!mat) continue;
-      const com = mat.comisiones.find((c) => c.id === pick.comisionId);
-      if (!com) continue;
-      for (const h of com.horarios) {
-        if (h.dia === dia && franjaIdx(h.hora_inicio) === fi)
-          resultado.push({ type: "pick", materia: mat, comision: com, horario: h, isPicked: true, isDimmed: !!activaMatId });
+      for (const h of pick.horarios) {
+        if (h.dia === dia && franjaIdx(h.hora_inicio) === fi) {
+          // Construimos objetos mínimos para renderizar
+          const materiaFake: MateriaConComisiones = {
+            id: pick.materiaId,
+            nombre: pick.materiaNombre,
+            comisiones: [],
+          };
+          const comisionFake: Comision = {
+            id: pick.comisionId,
+            nombre: pick.comisionNombre,
+            horarios: pick.horarios,
+          };
+          resultado.push({
+            type: "pick",
+            materia: materiaFake,
+            comision: comisionFake,
+            horario: h,
+            isPicked: true,
+            isDimmed: !!activaMatId,
+          });
+        }
       }
     }
+
+    // Candidates solo si la materia activa está en materias actuales
     if (activaMatId) {
       const mat = materias.find((m) => m.id === activaMatId);
       if (mat) {
@@ -176,12 +214,20 @@ export default function HorariosPage() {
           for (const h of com.horarios) {
             if (h.dia === dia && franjaIdx(h.hora_inicio) === fi) {
               const isPicked = com.id === pickedComId;
-              resultado.push({ type: "candidate", materia: mat, comision: com, horario: h, isPicked, isDimmed: !!pickedComId && !isPicked });
+              resultado.push({
+                type: "candidate",
+                materia: mat,
+                comision: com,
+                horario: h,
+                isPicked,
+                isDimmed: !!pickedComId && !isPicked,
+              });
             }
           }
         });
       }
     }
+
     return resultado;
   }
 
@@ -196,42 +242,58 @@ export default function HorariosPage() {
         </div>
 
         <div className="horarios-filtros">
+
+          {/* Carrera */}
           <div className="horarios-filtro">
             <label>Carrera</label>
-            <div className="tag-group">
+            <div className="horarios-tag-list">
               {ingenierias.map((ing) => (
                 <button key={ing.id}
-                  className={`horarios-tag ${carreraId === ing.id ? "active" : ""}`}
-                  onClick={() => { if (carreraId === ing.id) { resetCarrera(); return; } setCarreraId(ing.id); setAnio(null); setMaterias([]); setActivaMatId(null); setPicks(new Map()); }}>
+                  className={`horarios-tag-block ${carreraId === ing.id ? "active" : ""}`}
+                  onClick={() => {
+                    if (carreraId === ing.id) { resetCarrera(); return; }
+                    setCarreraId(ing.id);
+                    setAnio(null);
+                    setMaterias([]);
+                    setActivaMatId(null);
+                  }}>
                   {ing.nombre}
+                  {carreraId === ing.id && <span>✓</span>}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Año */}
           {carreraId && (
             <div className="horarios-filtro">
               <label>Año</label>
-              <div className="tag-group">
+              <div className="horarios-tag-list">
                 {[1, 2, 3, 4, 5].map((a) => (
                   <button key={a}
-                    className={`horarios-tag ${anio === a ? "active" : ""}`}
-                    onClick={() => { setAnio(anio === a ? null : a); setActivaMatId(null); setPicks(new Map()); }}>
+                    className={`horarios-tag-block ${anio === a ? "active" : ""}`}
+                    onClick={() => {
+                      setAnio(anio === a ? null : a);
+                      setActivaMatId(null);
+
+                    }}>
                     {a}° Año
+                    {anio === a && <span>✓</span>}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Materias */}
           {carreraId && anio && (
             <div className="horarios-filtro">
               <label>
                 Materias
-                {activaMat && <span className="horarios-filtro__hint"> — hacé click en un bloque de la grilla para elegir comisión</span>}
+                {activaMat && <span className="horarios-filtro__hint"> — elegí una comisión en la grilla</span>}
               </label>
               {loadingMaterias ? <p className="horarios-loading">Cargando materias...</p> : (
-                <div className="tag-group">
+                <div className="horarios-tag-list">
                   {materias.length === 0 && <p className="horarios-loading">Sin materias para esta carrera y año.</p>}
                   {materias.map((mat) => {
                     const pick = picks.get(mat.id);
@@ -240,14 +302,17 @@ export default function HorariosPage() {
                     const c = getColor(mat.id);
                     return (
                       <button key={mat.id} disabled={!tieneHorario}
-                        className={`horarios-tag ${isActiva ? "active" : ""} ${pick ? "agregada" : ""} ${!tieneHorario ? "sin-horario" : ""}`}
+                        className={`horarios-tag-block ${isActiva ? "active" : ""} ${pick ? "agregada" : ""} ${!tieneHorario ? "sin-horario" : ""}`}
                         style={pick ? { background: c.bg, borderColor: c.border, color: c.text } : {}}
                         onClick={() => selectMateria(mat.id)}
                         title={!tieneHorario ? "Sin horario asignado" : undefined}>
                         {mat.nombre}
                         {pick && (
-                          <><span className="horarios-tag__comision"> · {pick.comisionNombre}</span>
-                          <span className="horarios-tag__remove" onClick={(e) => { e.stopPropagation(); removePick(mat.id); }}>×</span></>
+                          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 11, opacity: 0.7 }}>{pick.comisionNombre}</span>
+                            <span onClick={(e) => { e.stopPropagation(); removePick(mat.id); }}
+                              style={{ opacity: 0.5, fontSize: 16, lineHeight: 1 }}>×</span>
+                          </span>
                         )}
                       </button>
                     );
@@ -257,6 +322,7 @@ export default function HorariosPage() {
             </div>
           )}
 
+          {/* Leyenda */}
           {picks.size > 0 && (
             <div className="horarios-legend">
               {Array.from(picks.values()).map((pick) => {
@@ -265,7 +331,10 @@ export default function HorariosPage() {
                   <div key={pick.materiaId} className="horarios-legend__item" style={{ borderColor: c.border }}
                     onClick={() => removePick(pick.materiaId)} title="Click para quitar">
                     <span className="horarios-legend__dot" style={{ background: c.bg, borderColor: c.border }} />
-                    <span style={{ color: c.text }}>{pick.materiaNombre}<span style={{ opacity: 0.65 }}> · {pick.comisionNombre}</span></span>
+                    <span style={{ color: c.text }}>
+                      {pick.materiaNombre}
+                      <span style={{ opacity: 0.65 }}> · {pick.comisionNombre}</span>
+                    </span>
                     <span style={{ opacity: 0.4, marginLeft: 4 }}>×</span>
                   </div>
                 );
@@ -274,21 +343,28 @@ export default function HorariosPage() {
           )}
 
           {errorMsg && <p className="horarios-error">{errorMsg}</p>}
+
         </div>
       </div>
 
+      {/* ── Grilla ───────────────────────────────────── */}
       <div className="horarios-grilla-wrapper">
-        {!carreraId || !anio ? (
-          <p className="horarios-empty">Seleccioná una carrera y año para ver la grilla.</p>
-        ) : loadingMaterias ? (
-          <p className="horarios-loading">Cargando...</p>
+        {loadingMaterias ? (
+          <p className="horarios-loading" style={{ padding: 40 }}>Cargando...</p>
         ) : (
           <div className="horarios-grilla">
+
             <div className="horarios-grilla__corner" />
-            {DIAS.map((dia) => <div key={dia} className="horarios-grilla__dia">{dia}</div>)}
+            {DIAS.map((dia) => (
+              <div key={dia} className="horarios-grilla__dia">{dia}</div>
+            ))}
+
             {FRANJAS.slice(0, -1).map((franja, fi) => (
-              <>
-                <div key={`h-${franja}`} className="horarios-grilla__hora" style={{ height: slotPx(fi) }}>{franja}</div>
+              <React.Fragment key={franja}>
+                <div className="horarios-grilla__hora" style={{ height: slotPx(fi) }}>
+                  {franja}
+                </div>
+
                 {DIAS.map((dia) => {
                   const bloques = getBloquesEnCelda(dia, fi);
                   const candidates = bloques.filter((b) => b.type === "candidate");
@@ -302,24 +378,30 @@ export default function HorariosPage() {
                         const isPick = bloque.type === "pick";
                         const candIdx = candidates.indexOf(bloque);
                         const widthStyle = !isPick && nCands > 1
-                          ? { width: `calc(${100 / nCands}% - 2px)`, left: `calc(${(candIdx / nCands) * 100}% + 1px)` } : {};
+                          ? { width: `calc(${100 / nCands}% - 2px)`, left: `calc(${(candIdx / nCands) * 100}% + 1px)` }
+                          : {};
                         const style: React.CSSProperties = {
-                          position: "absolute", top: 1, left: 1, right: 1, height: blockH,
-                          background: c.bg, borderColor: bloque.isPicked ? c.text : c.border, color: c.text,
-                          opacity: bloque.isDimmed ? 0.28 : 1,
-                          boxShadow: bloque.isPicked ? `0 0 0 2px ${c.border}` : "none",
+                          position: "absolute", top: 2, left: 2, right: 2,
+                          height: blockH,
+                          background: c.bg,
+                          borderColor: bloque.isPicked ? c.text : c.border,
+                          color: c.text,
+                          opacity: bloque.isDimmed ? 0.2 : 1,
+                          boxShadow: bloque.isPicked ? `0 0 0 1.5px ${c.border}` : "none",
                           zIndex: bloque.isPicked ? 5 : isPick ? 3 : 2,
                           pointerEvents: bloque.isDimmed ? "none" : "auto",
                           ...widthStyle,
                         };
                         return (
-                          <div key={`${bloque.materia.id}-${bloque.comision.id}`}
+                          <div
+                            key={`${bloque.materia.id}-${bloque.comision.id}`}
                             className={`horarios-bloque ${bloque.isPicked ? "picked" : ""} ${isPick ? "is-pick" : "is-candidate"}`}
                             style={style}
-                            onClick={() => { if (isPick) selectMateria(bloque.materia.id); else pickComision(bloque.materia, bloque.comision); }}>
-                            <span className="horarios-bloque__mat">
-                              {bloque.materia.nombre.length > 14 ? bloque.materia.nombre.slice(0, 13) + "…" : bloque.materia.nombre}
-                            </span>
+                            onClick={() => {
+                              if (isPick) selectMateria(bloque.materia.id);
+                              else pickComision(bloque.materia, bloque.comision);
+                            }}>
+                            <span className="horarios-bloque__mat">{bloque.materia.nombre}</span>
                             <span className="horarios-bloque__com">{bloque.comision.nombre}</span>
                           </div>
                         );
@@ -327,8 +409,15 @@ export default function HorariosPage() {
                     </div>
                   );
                 })}
-              </>
+              </React.Fragment>
             ))}
+
+            {/* Fila final 23:05 */}
+            <div className="horarios-grilla__hora" style={{ height: 14 }}>23:05</div>
+            {DIAS.map((dia) => (
+              <div key={`${dia}-fin`} className="horarios-grilla__celda" style={{ height: 14 }} />
+            ))}
+
           </div>
         )}
       </div>
