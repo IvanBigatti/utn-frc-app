@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import './uploadForm.css'
 
 type Ingenieria = { id: number; nombre: string }
 type Materia = { id: number; nombre: string }
@@ -13,9 +14,10 @@ const TIPOS = [
   { value: 'tp', label: 'TP' },
 ]
 
+const supabase = createClient()
+
 export default function UploadForm() {
   const router = useRouter()
-  const supabase = createClient()
 
   const [ingenierias, setIngenierias] = useState<Ingenieria[]>([])
   const [materias, setMaterias] = useState<Materia[]>([])
@@ -41,21 +43,16 @@ export default function UploadForm() {
 
   useEffect(() => {
     if (!carreraId || !anio) { setMaterias([]); return }
-
     setLoadingMaterias(true)
     const fetch = async () => {
       const { data: comisiones } = await supabase
         .from('comision').select('id')
         .eq('ingenieria_id', carreraId).eq('año', anio)
-
       if (!comisiones?.length) { setMaterias([]); setLoadingMaterias(false); return }
-
       const ids = comisiones.map(c => c.id)
       const { data: relaciones } = await supabase
         .from('ComisionMaterias').select('materia(id, nombre)').in('idComision', ids)
-
       if (!relaciones) { setMaterias([]); setLoadingMaterias(false); return }
-
       const todas = relaciones.map((r: any) => r.materia).filter(Boolean)
       const unicas = Array.from(new Map(todas.map((m: Materia) => [m.id, m])).values()) as Materia[]
       setMaterias(unicas.sort((a, b) => a.nombre.localeCompare(b.nombre)))
@@ -67,11 +64,7 @@ export default function UploadForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!file || !materiaId || !nombre.trim()) return
-
-    setUploading(true)
-    setError('')
-    setProgress(30)
-
+    setUploading(true); setError(''); setProgress(30)
     const formData = new FormData()
     formData.append('file', file)
     formData.append('nombre', nombre.trim())
@@ -79,104 +72,91 @@ export default function UploadForm() {
     formData.append('materia_id', String(materiaId))
     formData.append('ingenieria_id', String(carreraId))
     if (descripcion.trim()) formData.append('descripcion', descripcion.trim())
-
     setProgress(60)
-
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData })
       const json = await res.json()
-
-      if (!res.ok) {
-        setError(json.error || 'Error al subir el archivo')
-        setUploading(false)
-        setProgress(0)
-        return
-      }
-
-      setProgress(100)
-      setSuccess(true)
+      if (!res.ok) { setError(json.error || 'Error al subir el archivo'); setUploading(false); setProgress(0); return }
+      setProgress(100); setSuccess(true)
       setTimeout(() => router.push(`/resultados?materia_id=${materiaId}`), 1500)
     } catch {
-      setError('Error de conexión. Intentá de nuevo.')
-      setUploading(false)
-      setProgress(0)
+      setError('Error de conexión. Intentá de nuevo.'); setUploading(false); setProgress(0)
     }
   }
 
   if (success) {
     return (
-      <div className="text-center py-12">
-        <div className="text-5xl mb-4">✓</div>
-        <p className="text-lg font-medium text-green-600 dark:text-green-400">¡Material subido correctamente!</p>
-        <p className="text-sm text-gray-500 mt-1">Redirigiendo a los resultados...</p>
+      <div className="upload-success">
+        <div className="upload-success__icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <p className="upload-success__title">Material subido correctamente</p>
+        <p className="upload-success__sub">Redirigiendo a los resultados...</p>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="upload-form">
+
       {/* Carrera */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Carrera</label>
-        <select
-          value={carreraId ?? ''}
-          onChange={e => { setCarreraId(Number(e.target.value) || null); setAnio(null); setMateriaId(null) }}
-          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          required
-        >
-          <option value="">Seleccioná una carrera</option>
-          {ingenierias.map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
-        </select>
+      <div className="upload-field">
+        <label>Carrera</label>
+        <div className="tag-group">
+          {ingenierias.map(i => (
+            <button key={i.id} type="button"
+              className={`upload-tag ${carreraId === i.id ? 'active' : ''}`}
+              onClick={() => { setCarreraId(carreraId === i.id ? null : i.id); setAnio(null); setMateriaId(null) }}>
+              {i.nombre}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Año */}
       {carreraId && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Año</label>
-          <select
-            value={anio ?? ''}
-            onChange={e => { setAnio(Number(e.target.value) || null); setMateriaId(null) }}
-            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-            required
-          >
-            <option value="">Seleccioná el año</option>
-            {[1,2,3,4,5].map(a => <option key={a} value={a}>{a}° Año</option>)}
-          </select>
+        <div className="upload-field">
+          <label>Año</label>
+          <div className="tag-group">
+            {[1,2,3,4,5].map(a => (
+              <button key={a} type="button"
+                className={`upload-tag ${anio === a ? 'active' : ''}`}
+                onClick={() => { setAnio(anio === a ? null : a); setMateriaId(null) }}>
+                {a}° Año
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Materia */}
       {carreraId && anio && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Materia</label>
-          <select
-            value={materiaId ?? ''}
-            onChange={e => setMateriaId(Number(e.target.value) || null)}
-            disabled={loadingMaterias}
-            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
-            required
-          >
-            <option value="">{loadingMaterias ? 'Cargando...' : 'Seleccioná una materia'}</option>
-            {materias.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-          </select>
+        <div className="upload-field">
+          <label>Materia</label>
+          {loadingMaterias ? <p className="upload-loading">Cargando materias...</p> : (
+            <div className="tag-group">
+              {materias.map(m => (
+                <button key={m.id} type="button"
+                  className={`upload-tag ${materiaId === m.id ? 'active' : ''}`}
+                  onClick={() => setMateriaId(materiaId === m.id ? null : m.id)}>
+                  {m.nombre}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* Tipo */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de material</label>
-        <div className="flex gap-2">
+      <div className="upload-field">
+        <label>Tipo de material</label>
+        <div className="tag-group">
           {TIPOS.map(t => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setTipo(t.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                tipo === t.value
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-              }`}
-            >
+            <button key={t.value} type="button"
+              className={`upload-tag ${tipo === t.value ? 'active' : ''}`}
+              onClick={() => setTipo(t.value)}>
               {t.label}
             </button>
           ))}
@@ -184,64 +164,73 @@ export default function UploadForm() {
       </div>
 
       {/* Nombre */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del archivo</label>
+      <div className="upload-field">
+        <label>Nombre del archivo</label>
         <input
           type="text"
           value={nombre}
           onChange={e => setNombre(e.target.value)}
           placeholder="Ej: Parcial 1 2024 — Análisis Matemático"
-          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400"
+          className="upload-input"
           required
         />
       </div>
 
       {/* Descripción */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Descripción <span className="text-gray-400 font-normal">(opcional)</span>
-        </label>
+      <div className="upload-field">
+        <label>Descripción <span className="upload-optional">(opcional)</span></label>
         <textarea
           value={descripcion}
           onChange={e => setDescripcion(e.target.value)}
           placeholder="Ej: Incluye resolución, temas: integrales, series..."
           rows={3}
-          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none"
+          className="upload-textarea"
         />
       </div>
 
       {/* Archivo */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Archivo</label>
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          onChange={e => setFile(e.target.files?.[0] ?? null)}
-          className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900 dark:file:text-blue-300 hover:file:bg-blue-100"
-          required
-        />
-        <p className="text-xs text-gray-400 mt-1">PDF, JPG o PNG — máx. 20 MB</p>
+      <div className="upload-field">
+        <label>Archivo</label>
+        <label className="upload-dropzone">
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            onChange={e => setFile(e.target.files?.[0] ?? null)}
+            className="upload-file-input"
+            required
+          />
+          <div className="upload-dropzone__content">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            {file ? (
+              <span className="upload-dropzone__name">{file.name}</span>
+            ) : (
+              <span>Seleccioná un archivo <span className="upload-optional">PDF, JPG o PNG — máx. 20 MB</span></span>
+            )}
+          </div>
+        </label>
       </div>
 
-      {/* Progress bar */}
+      {/* Progress */}
       {uploading && (
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-          <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="upload-progress">
+          <div className="upload-progress__bar" style={{ width: `${progress}%` }} />
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="upload-error">{error}</p>}
 
       <button
         type="submit"
         disabled={uploading || !file || !materiaId || !nombre.trim()}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg py-2.5 text-sm transition-colors"
+        className="upload-submit"
       >
         {uploading ? 'Subiendo...' : 'Subir material'}
       </button>
+
     </form>
   )
 }

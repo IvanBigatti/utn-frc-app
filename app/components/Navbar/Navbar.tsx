@@ -10,7 +10,7 @@ export default async function Navbar() {
     <nav className="w-full border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="font-bold text-gray-900 dark:text-white text-lg">
-          UTN FRC
+          TUTN
         </Link>
 
         <div className="flex items-center gap-4">
