@@ -489,3 +489,326 @@
   justify-content: space-between;
   gap: 12px;
 }
+
+
+/* ── Tipo badge ──────────────────────────────────── */
+.foro-post-card__tipo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 100px;
+  border: 1.5px solid transparent;
+}
+
+.foro-post-card__tipo--pregunta  { background: #fffbe6; color: #b7791f; border-color: #f6e09e; }
+.foro-post-card__tipo--recurso   { background: #e6fff0; color: #276749; border-color: #9ae6b4; }
+.foro-post-card__tipo--debate    { background: #e8f4ff; color: #2b6cb0; border-color: #bee3f8; }
+.foro-post-card__tipo--aviso     { background: #fff0f0; color: #9b2c2c; border-color: #fed7d7; }
+
+/* ── Ingenieria pill ─────────────────────────────── */
+.foro-post-card__ingenieria {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+
+/* ── Vote widget ─────────────────────────────────── */
+.foro-vote {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.foro-vote__btn {
+  background: none;
+  border: 1.5px solid #e0e0dc;
+  border-radius: 100px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  color: #aaa;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.foro-vote__btn:hover { border-color: #a0b0d8; color: #1f387e; }
+
+.foro-vote__btn--up.active   { background: #e6fff0; border-color: #9ae6b4; color: #276749; }
+.foro-vote__btn--down.active { background: #fff0f0; border-color: #fed7d7; color: #9b2c2c; }
+
+.foro-vote__btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.foro-vote__btn:disabled:hover { border-color: #e0e0dc; color: #aaa; }
+
+.foro-vote__score {
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+  min-width: 22px;
+  text-align: center;
+}
+
+.foro-vote__score--positive { color: #276749; }
+.foro-vote__score--negative { color: #9b2c2c; }
+
+/* ── Comment count pill ──────────────────────────── */
+.foro-post-card__comments {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* ── Sort control ────────────────────────────────── */
+.foro-sort {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.foro-sort__btn {
+  padding: 6px 14px;
+  border: 1.5px solid #e0e0dc;
+  border-radius: 100px;
+  background: #f8f8f6;
+  font-size: 12px;
+  font-weight: 600;
+  color: #777;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.foro-sort__btn.active {
+  border-color: #1f387e;
+  color: #1f387e;
+  background: #f0f4ff;
+}
+
+/* ── Checkbox anónimo ────────────────────────────── */
+.foro-anonimo-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #777;
+  cursor: pointer;
+  user-select: none;
+}
+
+.foro-anonimo-check input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: #1f387e;
+}
+
+/* ── Post detail page ────────────────────────────── */
+.foro-detail-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  min-height: 100vh;
+}
+
+.foro-detail-back {
+  font-size: 13px;
+  color: #aaa;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 28px;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.foro-detail-back:hover { color: #1f387e; }
+
+.foro-detail__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.foro-detail__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 10px;
+  line-height: 1.35;
+}
+
+.foro-detail__author {
+  font-size: 12px;
+  color: #aaa;
+  margin: 0 0 24px;
+}
+
+.foro-detail__body {
+  font-size: 15px;
+  color: #444;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  margin-bottom: 32px;
+}
+
+.foro-detail__vote-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+  border-top: 1px solid #f0f0ee;
+  border-bottom: 1px solid #f0f0ee;
+  margin-bottom: 36px;
+}
+
+.foro-detail__vote-hint {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* ── Comments section ────────────────────────────── */
+.foro-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.foro-comments__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 4px;
+}
+
+.foro-comment-card {
+  padding: 14px 18px;
+  background: #f8f8f6;
+  border-radius: 12px;
+  border: 1px solid #f0f0ee;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.foro-comment-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.foro-comment-card__author {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1f387e;
+}
+
+.foro-comment-card__text {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.foro-comment-card__fecha {
+  font-size: 11px;
+  color: #ccc;
+}
+
+.foro-comment-card__eliminar {
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #c0392b;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.foro-comment-card__eliminar:hover { opacity: 0.7; }
+
+/* ── New comment form ────────────────────────────── */
+.foro-new-comment {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: #f8f8f6;
+  border-radius: 14px;
+  border: 1px solid #f0f0ee;
+}
+
+.foro-new-comment__textarea {
+  border: 1.5px solid #e8e8e4;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #1a1a2e;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.6;
+  transition: border-color 0.2s;
+  background: #fff;
+  min-height: 80px;
+}
+
+.foro-new-comment__textarea:focus { border-color: #a0b0d8; }
+
+.foro-new-comment__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.foro-new-comment__submit {
+  padding: 9px 22px;
+  background: #1f387e;
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.foro-new-comment__submit:hover    { background: #162d6b; }
+.foro-new-comment__submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.foro-login-hint {
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 16px;
+}
+
+.foro-login-hint a {
+  color: #1f387e;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ── Card footer row ─────────────────────────────── */
+.foro-post-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}

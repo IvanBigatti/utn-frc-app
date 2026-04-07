@@ -3,11 +3,14 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/app/lib/supabase/client";
 
+type TipoPost = "Pregunta" | "Recurso" | "Debate" | "Aviso";
+
 type Filtros = {
   carreraId: number | null;
   anio: number | null;
   materiaId: number | null;
   comisionId: number | null;
+  tipo: TipoPost | null;
 };
 
 type Props = {
@@ -18,6 +21,8 @@ type Props = {
 };
 
 type Item = { id: number; nombre: string };
+
+const TIPOS: TipoPost[] = ["Pregunta", "Recurso", "Debate", "Aviso"];
 
 const supabase = createClient();
 
@@ -72,7 +77,7 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
 
   const handleAplicar = () => { onChange(local); onClose(); };
   const handleLimpiar = () => {
-    const vacio = { carreraId: null, anio: null, materiaId: null, comisionId: null };
+    const vacio: Filtros = { carreraId: null, anio: null, materiaId: null, comisionId: null, tipo: null };
     setLocal(vacio);
     onChange(vacio);
     onClose();
@@ -91,6 +96,21 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
         </div>
 
         <div className="filtro-lateral__body">
+
+          <div className="filtro-grupo">
+            <label>Tipo de publicación <span className="filtro-opcional">(opcional)</span></label>
+            <div className="tag-group">
+              {TIPOS.map((t) => (
+                <button
+                  key={t}
+                  className={`foro-tag ${local.tipo === t ? "active" : ""}`}
+                  onClick={() => setLocal((p) => ({ ...p, tipo: p.tipo === t ? null : t }))}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="filtro-grupo">
             <label>Carrera</label>

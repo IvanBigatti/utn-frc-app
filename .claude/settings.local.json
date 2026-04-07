@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm install:*)",
       "mcp__claude_ai_Supabase__apply_migration",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(find /Users/ivanbigatti/Documents/Proyectos/utn-frc-app -type f -name *.sql -o -name *schema*)",
+      "Bash(grep -r foro_post /Users/ivanbigatti/Documents/Proyectos/utn-frc-app/app --include=*.ts --include=*.tsx)",
+      "Bash(find /Users/ivanbigatti/Documents/Proyectos/utn-frc-app -maxdepth 2 -type f \\\\\\(-name *.sql -o -name .env* -o -name next.config.* \\\\\\))"
     ]
   }
 }
