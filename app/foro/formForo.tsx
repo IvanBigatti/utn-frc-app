@@ -21,7 +21,6 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
   const [contenido, setContenido] = useState("");
   const [tipo, setTipo] = useState<TipoPost | null>(null);
   const [anonimo, setAnonimo] = useState(false);
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
 
@@ -37,7 +36,7 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
   // Reset al cerrar
   useEffect(() => {
     if (!isOpen) {
-      setTitulo(""); setContenido(""); setMostrarFiltros(false);
+      setTitulo(""); setContenido("");
       setTipo(null); setAnonimo(false);
       setCarreraId(null); setAnio(null); setMateriaId(null); setComisionId(null);
       setError("");
@@ -188,6 +187,63 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
             />
           </div>
 
+          {/* Etiquetas: carrera → año → materia → comisión */}
+          <div className="nuevo-post__filtros">
+            <div className="filtro-grupo">
+              <label>Carrera <span className="filtro-opcional">(opcional)</span></label>
+              <div className="tag-group">
+                {ingenierias.map((ing) => (
+                  <button key={ing.id} className={`foro-tag ${carreraId === ing.id ? "active" : ""}`}
+                    onClick={() => { setCarreraId(carreraId === ing.id ? null : ing.id); setAnio(null); setMateriaId(null); setComisionId(null); }}>
+                    {ing.nombre}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {carreraId && (
+              <div className="filtro-grupo">
+                <label>Año <span className="filtro-opcional">(opcional)</span></label>
+                <div className="tag-group">
+                  {[1, 2, 3, 4, 5].map((a) => (
+                    <button key={a} className={`foro-tag ${anio === a ? "active" : ""}`}
+                      onClick={() => { setAnio(anio === a ? null : a); setMateriaId(null); setComisionId(null); }}>
+                      {a}° Año
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {carreraId && anio && materias.length > 0 && (
+              <div className="filtro-grupo">
+                <label>Materia <span className="filtro-opcional">(opcional)</span></label>
+                <div className="tag-group">
+                  {materias.map((mat) => (
+                    <button key={mat.id} className={`foro-tag ${materiaId === mat.id ? "active" : ""}`}
+                      onClick={() => { setMateriaId(materiaId === mat.id ? null : mat.id); setComisionId(null); }}>
+                      {mat.nombre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {carreraId && anio && comisiones.length > 0 && (
+              <div className="filtro-grupo">
+                <label>Comisión <span className="filtro-opcional">(opcional)</span></label>
+                <div className="tag-group">
+                  {comisiones.map((com) => (
+                    <button key={com.id} className={`foro-tag ${comisionId === com.id ? "active" : ""}`}
+                      onClick={() => setComisionId(comisionId === com.id ? null : com.id)}>
+                      {com.nombre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Anónimo */}
           <label className="foro-anonimo-check">
             <input
@@ -197,79 +253,6 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
             />
             Publicar de forma anónima
           </label>
-
-          {/* Clasificación */}
-          <button
-            className={`nuevo-post__tag-btn ${mostrarFiltros ? "active" : ""}`}
-            onClick={() => setMostrarFiltros(!mostrarFiltros)}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
-            </svg>
-            {mostrarFiltros ? "Ocultar clasificación" : "Clasificar publicación"}
-            {(carreraId || materiaId || comisionId) && (
-              <span className="foro-filtro-btn__badge" />
-            )}
-          </button>
-
-          {mostrarFiltros && (
-            <div className="nuevo-post__filtros">
-              <div className="filtro-grupo">
-                <label>Carrera <span className="filtro-opcional">(opcional)</span></label>
-                <div className="tag-group">
-                  {ingenierias.map((ing) => (
-                    <button key={ing.id} className={`foro-tag ${carreraId === ing.id ? "active" : ""}`}
-                      onClick={() => { setCarreraId(carreraId === ing.id ? null : ing.id); setAnio(null); setMateriaId(null); setComisionId(null); }}>
-                      {ing.nombre}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {carreraId && (
-                <div className="filtro-grupo">
-                  <label>Año <span className="filtro-opcional">(opcional)</span></label>
-                  <div className="tag-group">
-                    {[1, 2, 3, 4, 5].map((a) => (
-                      <button key={a} className={`foro-tag ${anio === a ? "active" : ""}`}
-                        onClick={() => { setAnio(anio === a ? null : a); setMateriaId(null); setComisionId(null); }}>
-                        {a}° Año
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {carreraId && anio && materias.length > 0 && (
-                <div className="filtro-grupo">
-                  <label>Materia <span className="filtro-opcional">(opcional)</span></label>
-                  <div className="tag-group">
-                    {materias.map((mat) => (
-                      <button key={mat.id} className={`foro-tag ${materiaId === mat.id ? "active" : ""}`}
-                        onClick={() => { setMateriaId(materiaId === mat.id ? null : mat.id); setComisionId(null); }}>
-                        {mat.nombre}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {carreraId && anio && comisiones.length > 0 && (
-                <div className="filtro-grupo">
-                  <label>Comisión <span className="filtro-opcional">(opcional)</span></label>
-                  <div className="tag-group">
-                    {comisiones.map((com) => (
-                      <button key={com.id} className={`foro-tag ${comisionId === com.id ? "active" : ""}`}
-                        onClick={() => setComisionId(comisionId === com.id ? null : com.id)}>
-                        {com.nombre}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {error && <p className="login-error">{error}</p>}
         </div>

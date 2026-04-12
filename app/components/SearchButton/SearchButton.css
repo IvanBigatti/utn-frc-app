@@ -1,4 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+body {
+  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #e2e0e0 80%)
+}
 
 .search-hero {
   display: flex;

@@ -198,7 +198,9 @@ export default function PostDetailPage() {
   if (loading) {
     return (
       <div className="foro-detail-page">
-        <div className="foro-loading-state">Cargando publicación...</div>
+        <div className="foro-detail-inner">
+          <div className="foro-loading-state">Cargando publicación...</div>
+        </div>
       </div>
     );
   }
@@ -206,156 +208,168 @@ export default function PostDetailPage() {
   if (!post) {
     return (
       <div className="foro-detail-page">
-        <button className="foro-detail-back" onClick={() => router.push("/foro")}>
-          ← Volver al foro
-        </button>
-        <div className="foro-empty"><p>Publicación no encontrada.</p></div>
+        <div className="foro-detail-inner">
+          <button className="foro-detail-back" onClick={() => router.push("/foro")}>← Volver al foro</button>
+          <div className="foro-empty"><p>Publicación no encontrada.</p></div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="foro-detail-page">
-      <button className="foro-detail-back" onClick={() => router.push("/foro")}>
-        ← Volver al foro
-      </button>
+      <div className="foro-detail-inner">
 
-      {/* Meta */}
-      <div className="foro-detail__meta">
-        {post.tipo && (
-          <span className={`foro-post-card__tipo foro-post-card__tipo--${post.tipo.toLowerCase()}`}>
-            {post.tipo}
-          </span>
-        )}
-        {post.ingenieria?.nombre && (
-          <span className="foro-post-card__ingenieria">{post.ingenieria.nombre}</span>
-        )}
-        {post.materia?.nombre && (
-          <span className="foro-post-card__tag">{post.materia.nombre}</span>
-        )}
-        {post.comision?.nombre && (
-          <span className="foro-post-card__comision">Comisión {post.comision.nombre}</span>
-        )}
-      </div>
+        <button className="foro-detail-back" onClick={() => router.push("/foro")}>
+          ← Volver al foro
+        </button>
 
-      <h1 className="foro-detail__title">{post.titulo}</h1>
+        {/* Post card */}
+        <div className="foro-detail-card">
 
-      <p className="foro-detail__author">
-        Publicado por <strong>{displayName(post.auth_user_id, post.anonimo)}</strong>
-        {" · "}
-        {new Date(post.created_at).toLocaleDateString("es-AR", {
-          day: "numeric", month: "long", year: "numeric",
-        })}
-      </p>
+          {/* Vote column */}
+          <div className="foro-detail-card__vote">
+            <button
+              className={`foro-vote__btn foro-vote__btn--up ${userVote === 1 ? "active" : ""}`}
+              onClick={() => handleVote(1)}
+              disabled={!userId}
+              title={userId ? "Upvote" : "Iniciá sesión para votar"}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 8H4z"/></svg>
+            </button>
+            <span className={`foro-vote__score ${post.vote_score > 0 ? "foro-vote__score--positive" : post.vote_score < 0 ? "foro-vote__score--negative" : ""}`}>
+              {post.vote_score}
+            </span>
+            <button
+              className={`foro-vote__btn foro-vote__btn--down ${userVote === -1 ? "active" : ""}`}
+              onClick={() => handleVote(-1)}
+              disabled={!userId}
+              title={userId ? "Downvote" : "Iniciá sesión para votar"}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l-8-8h16z"/></svg>
+            </button>
+          </div>
 
-      <p className="foro-detail__body">{post.contenido}</p>
+          {/* Content */}
+          <div className="foro-detail-card__body">
+            <div className="foro-detail__meta">
+              {post.ingenieria?.nombre && (
+                <span className="foro-post-card__ingenieria">{post.ingenieria.nombre}</span>
+              )}
+              {post.tipo && (
+                <span className={`foro-post-card__tipo foro-post-card__tipo--${post.tipo.toLowerCase()}`}>
+                  {post.tipo}
+                </span>
+              )}
+              {post.materia?.nombre && (
+                <span className="foro-post-card__tag">{post.materia.nombre}</span>
+              )}
+              {post.comision?.nombre && (
+                <span className="foro-post-card__comision">· Com. {post.comision.nombre}</span>
+              )}
+              <span className="foro-post-card__sep">·</span>
+              <span>publicado por <strong>{displayName(post.auth_user_id, post.anonimo)}</strong></span>
+              <span className="foro-post-card__sep">·</span>
+              <span>{new Date(post.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}</span>
+            </div>
 
-      {/* Votes */}
-      <div className="foro-detail__vote-row">
-        <div className="foro-vote">
-          <button
-            className={`foro-vote__btn foro-vote__btn--up ${userVote === 1 ? "active" : ""}`}
-            onClick={() => handleVote(1)}
-            disabled={!userId}
-            title={userId ? "Upvote" : "Iniciá sesión para votar"}
-          >▲</button>
-          <span className={`foro-vote__score ${post.vote_score > 0 ? "foro-vote__score--positive" : post.vote_score < 0 ? "foro-vote__score--negative" : ""}`}>
-            {post.vote_score}
-          </span>
-          <button
-            className={`foro-vote__btn foro-vote__btn--down ${userVote === -1 ? "active" : ""}`}
-            onClick={() => handleVote(-1)}
-            disabled={!userId}
-            title={userId ? "Downvote" : "Iniciá sesión para votar"}
-          >▼</button>
-        </div>
-        {!userId && (
-          <span className="foro-detail__vote-hint">Iniciá sesión para votar</span>
-        )}
-        {userId && post.auth_user_id === userId && (
-          <button
-            className="foro-post-card__eliminar"
-            onClick={async () => {
-              const ok = window.confirm("¿Eliminar esta publicación?");
-              if (!ok) return;
-              await supabase.from("foro_post").delete().eq("id", post.id);
-              router.push("/foro");
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6l-1 14H6L5 6" />
-              <path d="M10 11v6M14 11v6" />
-              <path d="M9 6V4h6v2" />
-            </svg>
-            Eliminar publicación
-          </button>
-        )}
-      </div>
+            <h1 className="foro-detail__title">{post.titulo}</h1>
+            <p className="foro-detail__body">{post.contenido}</p>
 
-      {/* Comments */}
-      <div className="foro-comments">
-        <h3 className="foro-comments__title">
-          {comments.length} comentario{comments.length !== 1 ? "s" : ""}
-        </h3>
-
-        {comments.map((c) => (
-          <div key={c.id} className="foro-comment-card">
-            <div className="foro-comment-card__header">
-              <span className="foro-comment-card__author">
-                {displayName(c.auth_user_id, c.anonimo)}
-              </span>
-              {userId === c.auth_user_id && (
+            <div className="foro-detail__actions">
+              <button className="foro-post-card__action-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                {post.comment_count} comentarios
+              </button>
+              {!userId && (
+                <span className="foro-detail__vote-hint">· Iniciá sesión para votar</span>
+              )}
+              {userId && post.auth_user_id === userId && (
                 <button
-                  className="foro-comment-card__eliminar"
-                  onClick={() => handleCommentDelete(c.id)}
+                  className="foro-post-card__action-btn foro-post-card__action-btn--danger"
+                  onClick={async () => {
+                    const ok = window.confirm("¿Eliminar esta publicación?");
+                    if (!ok) return;
+                    await supabase.from("foro_post").delete().eq("id", post.id);
+                    router.push("/foro");
+                  }}
                 >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                  </svg>
                   Eliminar
                 </button>
               )}
             </div>
-            <p className="foro-comment-card__text">{c.contenido}</p>
-            <span className="foro-comment-card__fecha">
-              {new Date(c.created_at).toLocaleDateString("es-AR", {
-                day: "numeric", month: "long", year: "numeric",
-              })}
-            </span>
           </div>
-        ))}
+        </div>
 
-        {userId ? (
-          <div className="foro-new-comment">
-            <textarea
-              className="foro-new-comment__textarea"
-              placeholder="Escribí un comentario..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              maxLength={2000}
-            />
-            <div className="foro-new-comment__footer">
-              <label className="foro-anonimo-check">
-                <input
-                  type="checkbox"
-                  checked={newCommentAnonimo}
-                  onChange={(e) => setNewCommentAnonimo(e.target.checked)}
+        {/* Comments */}
+        <div className="foro-comments-card">
+          <div className="foro-comments">
+            <h3 className="foro-comments__title">
+              {comments.length} comentario{comments.length !== 1 ? "s" : ""}
+            </h3>
+
+            {comments.map((c) => (
+              <div key={c.id} className="foro-comment-card">
+                <div className="foro-comment-card__header">
+                  <span className="foro-comment-card__author">
+                    {displayName(c.auth_user_id, c.anonimo)}
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="foro-comment-card__fecha">
+                      {new Date(c.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    {userId === c.auth_user_id && (
+                      <button className="foro-comment-card__eliminar" onClick={() => handleCommentDelete(c.id)}>
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="foro-comment-card__text">{c.contenido}</p>
+              </div>
+            ))}
+
+            {userId ? (
+              <div className="foro-new-comment">
+                <textarea
+                  className="foro-new-comment__textarea"
+                  placeholder="Escribí un comentario..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  maxLength={2000}
                 />
-                Comentar de forma anónima
-              </label>
-              <button
-                className="foro-new-comment__submit"
-                onClick={handleCommentSubmit}
-                disabled={submitting || !newComment.trim()}
-              >
-                {submitting ? "Enviando..." : "Comentar"}
-              </button>
-            </div>
-            {commentError && <p className="login-error">{commentError}</p>}
+                <div className="foro-new-comment__footer">
+                  <label className="foro-anonimo-check">
+                    <input
+                      type="checkbox"
+                      checked={newCommentAnonimo}
+                      onChange={(e) => setNewCommentAnonimo(e.target.checked)}
+                    />
+                    Comentar de forma anónima
+                  </label>
+                  <button
+                    className="foro-new-comment__submit"
+                    onClick={handleCommentSubmit}
+                    disabled={submitting || !newComment.trim()}
+                  >
+                    {submitting ? "Enviando..." : "Comentar"}
+                  </button>
+                </div>
+                {commentError && <p style={{ color: "#991b1b", fontSize: 13 }}>{commentError}</p>}
+              </div>
+            ) : (
+              <p className="foro-login-hint">
+                <a href="/login">Iniciá sesión</a> para comentar.
+              </p>
+            )}
           </div>
-        ) : (
-          <p className="foro-login-hint">
-            <a href="/login">Iniciá sesión</a> para comentar.
-          </p>
-        )}
+        </div>
+
       </div>
     </div>
   );

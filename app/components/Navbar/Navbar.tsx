@@ -1,41 +1,21 @@
 import Link from 'next/link'
 import { createClient } from '@/app/lib/supabase/server'
-import LogoutButton from './LogoutButton'
+import NavMenu from './NavMenu'
 
 export default async function Navbar() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <nav className="w-full border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="font-bold text-gray-900 dark:text-white text-lg">
-          TUTN
+    <nav className="bg-white fixed w-full z-20 top-0 start-0 border-b border-gray-200">
+      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-4 h-14">
+
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-xl font-bold text-gray-900 tracking-tight">TUTN</span>
         </Link>
 
-        <div className="flex items-center gap-4">
-          {user ? (
-            <>
-              <Link
-                href="/upload"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hidden sm:block"
-              >
-                Subir material
-              </Link>
-              <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-                {user.email}
-              </span>
-              <LogoutButton />
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Iniciar sesión
-            </Link>
-          )}
-        </div>
+        <NavMenu email={user?.email ?? null} />
+
       </div>
     </nav>
   )

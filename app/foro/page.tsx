@@ -142,117 +142,75 @@ export default function ForoPage() {
 
   return (
     <div className="foro-page">
+      <div className="foro-inner">
 
-      {/* Header */}
-      <div className="foro-header">
-        <div>
+        {/* Header */}
+        <div className="foro-header">
           <h1 className="foro-header__title">Foro</h1>
-          <p className="foro-header__subtitle">
-            {hayFiltros ? `${posts.length} resultados con filtros aplicados` : `${posts.length} publicaciones`}
-          </p>
-        </div>
-
-        <div className="foro-header__actions">
-          <button
-            className={`foro-filtro-btn ${hayFiltros ? "active" : ""}`}
-            onClick={() => setFiltroOpen(true)}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="4" y1="6" x2="20" y2="6" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-              <line x1="11" y1="18" x2="13" y2="18" />
-            </svg>
-            Filtrar
-            {hayFiltros && <span className="foro-filtro-btn__badge" />}
-          </button>
-
-          <button className="foro-nuevo-btn" onClick={() => setNuevoPostOpen(true)}>
-            + Publicar
-          </button>
-        </div>
-      </div>
-
-      {/* Sort */}
-      <div className="foro-sort">
-        {(["recientes", "votados"] as SortOrder[]).map((s) => (
-          <button
-            key={s}
-            className={`foro-sort__btn ${sortOrder === s ? "active" : ""}`}
-            onClick={() => setSortOrder(s)}
-          >
-            {s === "recientes" ? "Más recientes" : "Más votados"}
-          </button>
-        ))}
-      </div>
-
-      {/* Lista de posts */}
-      {loading ? (
-        <div className="foro-loading-state">Cargando publicaciones...</div>
-      ) : posts.length === 0 ? (
-        <div className="foro-empty">
-          <p>No hay publicaciones todavía.</p>
-          {hayFiltros && (
-            <button className="foro-limpiar" onClick={() => setFiltros(filtrosVacios)}>
-              Limpiar filtros
+          <div className="foro-header__actions">
+            <button
+              className={`foro-filtro-btn ${hayFiltros ? "active" : ""}`}
+              onClick={() => setFiltroOpen(true)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+                <line x1="11" y1="18" x2="13" y2="18" />
+              </svg>
+              Filtrar
+              {hayFiltros && <span className="foro-filtro-btn__badge" />}
             </button>
-          )}
+            <button className="foro-nuevo-btn" onClick={() => setNuevoPostOpen(true)}>
+              + Publicar
+            </button>
+          </div>
         </div>
-      ) : (
-        <div className="foro-list">
-          {posts.map((post) => (
-            <div key={post.id} className="foro-post-card" onClick={() => router.push(`/foro/${post.id}`)}>
-              <div className="foro-post-card__meta">
-                {post.tipo && (
-                  <span className={`foro-post-card__tipo foro-post-card__tipo--${post.tipo.toLowerCase()}`}>
-                    {post.tipo}
-                  </span>
-                )}
-                {post.ingenieria?.nombre && (
-                  <span className="foro-post-card__ingenieria">{post.ingenieria.nombre}</span>
-                )}
-                {post.materia?.nombre && (
-                  <span className="foro-post-card__tag">{post.materia.nombre}</span>
-                )}
-                {post.comision?.nombre && (
-                  <span className="foro-post-card__comision">Comisión {post.comision.nombre}</span>
-                )}
 
-                {userId === post.auth_user_id && (
-                  <button
-                    className="foro-post-card__eliminar"
-                    onClick={(e) => handleEliminar(e, post.id)}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6l-1 14H6L5 6" />
-                      <path d="M10 11v6M14 11v6" />
-                      <path d="M9 6V4h6v2" />
-                    </svg>
-                    Eliminar
-                  </button>
-                )}
-              </div>
+        {/* Sort */}
+        <div className="foro-sort">
+          <button
+            className={`foro-sort__btn ${sortOrder === "recientes" ? "active" : ""}`}
+            onClick={() => setSortOrder("recientes")}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm1 11H11V7h2v6zm0 4H11v-2h2v2z"/></svg>
+            Nuevo
+          </button>
+          <button
+            className={`foro-sort__btn ${sortOrder === "votados" ? "active" : ""}`}
+            onClick={() => setSortOrder("votados")}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+            Top
+          </button>
+        </div>
 
-              <h2 className="foro-post-card__titulo">{post.titulo}</h2>
-              <p className="foro-post-card__preview">
-                {post.contenido.length > 160 ? post.contenido.slice(0, 160) + "..." : post.contenido}
-              </p>
+        {/* Lista de posts */}
+        {loading ? (
+          <div className="foro-loading-state">Cargando publicaciones...</div>
+        ) : posts.length === 0 ? (
+          <div className="foro-empty">
+            <p>No hay publicaciones todavía.</p>
+            {hayFiltros && (
+              <button className="foro-limpiar" onClick={() => setFiltros(filtrosVacios)}>
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="foro-list">
+            {posts.map((post) => (
+              <div key={post.id} className="foro-post-card" onClick={() => router.push(`/foro/${post.id}`)}>
 
-              <div className="foro-post-card__footer">
-                <span className="foro-post-card__fecha">
-                  {new Date(post.created_at).toLocaleDateString("es-AR", {
-                    day: "numeric", month: "long", year: "numeric",
-                  })}
-                </span>
-
-                {/* Votes */}
-                <div className="foro-vote" onClick={(e) => e.stopPropagation()}>
+                {/* Vote column */}
+                <div className="foro-post-card__vote" onClick={(e) => e.stopPropagation()}>
                   <button
                     className={`foro-vote__btn foro-vote__btn--up ${userVotes[post.id] === 1 ? "active" : ""}`}
                     onClick={(e) => handleVote(e, post.id, 1)}
                     disabled={!userId}
                     title={userId ? "Upvote" : "Iniciá sesión para votar"}
-                  >▲</button>
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 8H4z"/></svg>
+                  </button>
                   <span className={`foro-vote__score ${post.vote_score > 0 ? "foro-vote__score--positive" : post.vote_score < 0 ? "foro-vote__score--negative" : ""}`}>
                     {post.vote_score}
                   </span>
@@ -261,21 +219,64 @@ export default function ForoPage() {
                     onClick={(e) => handleVote(e, post.id, -1)}
                     disabled={!userId}
                     title={userId ? "Downvote" : "Iniciá sesión para votar"}
-                  >▼</button>
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l-8-8h16z"/></svg>
+                  </button>
                 </div>
 
-                {/* Comment count */}
-                <span className="foro-post-card__comments">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                  {post.comment_count}
-                </span>
+                {/* Content column */}
+                <div className="foro-post-card__body">
+                  <div className="foro-post-card__meta">
+                    {post.ingenieria?.nombre && (
+                      <span className="foro-post-card__ingenieria">{post.ingenieria.nombre}</span>
+                    )}
+                    {post.ingenieria?.nombre && <span className="foro-post-card__sep">·</span>}
+                    {post.tipo && (
+                      <span className={`foro-post-card__tipo foro-post-card__tipo--${post.tipo.toLowerCase()}`}>
+                        {post.tipo}
+                      </span>
+                    )}
+                    {post.materia?.nombre && (
+                      <span className="foro-post-card__tag">{post.materia.nombre}</span>
+                    )}
+                    {post.comision?.nombre && (
+                      <span className="foro-post-card__comision">  {post.comision.nombre}</span>
+                    )}
+                    <span className="foro-post-card__sep">·</span>
+                    <span>{new Date(post.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  </div>
+
+                  <h2 className="foro-post-card__titulo">{post.titulo}</h2>
+                  <p className="foro-post-card__preview">{post.contenido}</p>
+
+                  <div className="foro-post-card__footer">
+                    <button className="foro-post-card__action-btn" onClick={(e) => { e.stopPropagation(); router.push(`/foro/${post.id}`); }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                      {post.comment_count} comentarios
+                    </button>
+
+                    {userId === post.auth_user_id && (
+                      <button
+                        className="foro-post-card__action-btn foro-post-card__action-btn--danger"
+                        onClick={(e) => handleEliminar(e, post.id)}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                        </svg>
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
+                </div>
+
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+
+      </div>
 
       {/* Panel de filtros */}
       <FiltroPanel
