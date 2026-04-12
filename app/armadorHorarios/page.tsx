@@ -130,7 +130,7 @@ export default function HorariosPage() {
 
       // Agrupar por materia
       const map = new Map<number, MateriaConComisiones>();
-      for (const rel of rels as any[]) {
+      for (const rel of rels as { materia: { id: number; nombre: string } | null; horarios: Horario[] | null; idComision: number; cuatrimestre: number }[]) {
         if (!rel.materia || !rel.horarios) continue;
         const mat = rel.materia;
         if (!map.has(mat.id)) {
@@ -198,6 +198,8 @@ export default function HorariosPage() {
   function conflictsWith(materiaId: number, horarios: Horario[]): string | null {
     for (const [id, pick] of picks) {
       if (id === materiaId) continue;
+      // Ignorar picks de otro cuatrimestre (no se superponen en la realidad)
+      if (pick.cuatrimestre !== 0 && pick.cuatrimestre !== cuatrimestre) continue;
       if (horariosOverlap(pick.horarios, horarios)) return pick.materiaNombre;
     }
     return null;
@@ -276,7 +278,10 @@ export default function HorariosPage() {
         const pickedComId = picks.get(activaMatId)?.comisionId;
         mat.comisiones.forEach((com) => {
           const hasConflict = [...picks.entries()].some(
-            ([id, pick]) => id !== activaMatId && horariosOverlap(com.horarios, pick.horarios)
+            ([id, pick]) =>
+              id !== activaMatId &&
+              (pick.cuatrimestre === 0 || pick.cuatrimestre === cuatrimestre) &&
+              horariosOverlap(com.horarios, pick.horarios)
           );
           for (const h of mergeHorarios(com.horarios)) {
             if (h.dia === dia && franjaIdx(h.hora_inicio) === fi) {
@@ -299,14 +304,28 @@ export default function HorariosPage() {
     return resultado;
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const activaMat = materias.find((m) => m.id === activaMatId) ?? null;
+  const visiblePicks = Array.from(picks.values()).filter(p => p.cuatrimestre === 0 || p.cuatrimestre === cuatrimestre);
 
   return (
     <div className="horarios-page">
-      <div className="horarios-selector">
+
+      {/* Backdrop mobile: cierra sidebar al tocar fuera */}
+      {sidebarOpen && (
+        <div className="horarios-sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* ── Sidebar ───────────────────────────────────── */}
+      <div className={`horarios-selector ${sidebarOpen ? "" : "horarios-selector--closed"}`}>
         <div className="horarios-selector__header">
-          <h1 className="horarios-selector__title">Armador de Horarios</h1>
-          <p className="horarios-selector__sub">Elegí tu carrera, año y materias para construir tu horario ideal</p>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div>
+              <h1 className="horarios-selector__title">Armador de Horarios</h1>
+              <p className="horarios-selector__sub">Elegí tu carrera, año y materias</p>
+            </div>
+            <button className="horarios-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Cerrar menú">✕</button>
+          </div>
         </div>
 
         <div className="horarios-filtros">
@@ -341,32 +360,13 @@ export default function HorariosPage() {
                   <button key={a}
                     className={`horarios-tag-block ${anio === a ? "active" : ""}`}
                     onClick={() => {
-                      setAnio(anio === a ? null : a);
-                      setCuatrimestre(null);
+                      const nuevoAnio = anio === a ? null : a;
+                      setAnio(nuevoAnio);
+                      setCuatrimestre(nuevoAnio ? 1 : null);
                       setActivaMatId(null);
                     }}>
                     {a}° Año
                     {anio === a && <span>✓</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Cuatrimestre */}
-          {carreraId && anio && (
-            <div className="horarios-filtro">
-              <label>Cuatrimestre</label>
-              <div className="horarios-tag-list">
-                {[1, 2].map((c) => (
-                  <button key={c}
-                    className={`horarios-tag-block ${cuatrimestre === c ? "active" : ""}`}
-                    onClick={() => {
-                      setCuatrimestre(cuatrimestre === c ? null : c as 1 | 2);
-                      setActivaMatId(null);
-                    }}>
-                    {c}° Cuatrimestre
-                    {cuatrimestre === c && <span>✓</span>}
                   </button>
                 ))}
               </div>
@@ -411,9 +411,9 @@ export default function HorariosPage() {
           )}
 
           {/* Leyenda */}
-          {picks.size > 0 && (
+          {visiblePicks.length > 0 && (
             <div className="horarios-legend">
-              {Array.from(picks.values()).filter(p => p.cuatrimestre === 0 || p.cuatrimestre === cuatrimestre).map((pick) => {
+              {visiblePicks.map((pick) => {
                 const c = PALETTE[pick.colorIdx % PALETTE.length];
                 return (
                   <div key={pick.materiaId} className="horarios-legend__item" style={{ borderColor: c.border }}
@@ -432,45 +432,84 @@ export default function HorariosPage() {
 
           {errorMsg && <p className="horarios-error">{errorMsg}</p>}
 
-          {picks.size > 0 && (
-            <button
-              className="horarios-tag-block"
-              style={{ color: "#991b1b", borderColor: "#fca5a5", background: "#fff5f5", marginTop: 8 }}
-              onClick={() => {
-                const next = new Map(picks);
-                for (const [id, pick] of picks) {
-                  if (pick.cuatrimestre === 0 || pick.cuatrimestre === cuatrimestre) next.delete(id);
-                }
-                setPicks(next);
-                setActivaMatId(null);
-              }}
-            >
-              Limpiar todo
-            </button>
-          )}
-
-          {picks.size > 0 && (
-            <button className="export-btn" onClick={handleExportar} disabled={exporting}>
-              <span className="folderContainer">
-                <svg className="fileBack" width="146" height="113" viewBox="0 0 146 113" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M0 4C0 1.79086 1.79086 0 4 0H50.3802C51.8285 0 53.2056 0.627965 54.1553 1.72142L64.3303 13.4371C65.2799 14.5306 66.657 15.1585 68.1053 15.1585H141.509C143.718 15.1585 145.509 16.9494 145.509 19.1585V109C145.509 111.209 143.718 113 141.509 113H3.99999C1.79085 113 0 111.209 0 109V4Z" fill="url(#paint0_linear_117_4)" />
-                  <defs><linearGradient id="paint0_linear_117_4" x1="0" y1="0" x2="72.93" y2="95.4804" gradientUnits="userSpaceOnUse"><stop stopColor="#8F88C2" /><stop offset="1" stopColor="#5C52A2" /></linearGradient></defs>
-                </svg>
-                <svg className="filePage" width="88" height="99" viewBox="0 0 88 99" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="88" height="99" fill="url(#paint0_linear_117_6)" />
-                  <defs><linearGradient id="paint0_linear_117_6" x1="0" y1="0" x2="81" y2="160.5" gradientUnits="userSpaceOnUse"><stop stopColor="white" /><stop offset="1" stopColor="#686868" /></linearGradient></defs>
-                </svg>
-                <svg className="fileFront" width="160" height="79" viewBox="0 0 160 79" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M0.29306 12.2478C0.133905 9.38186 2.41499 6.97059 5.28537 6.97059H30.419H58.1902C59.5751 6.97059 60.9288 6.55982 62.0802 5.79025L68.977 1.18034C70.1283 0.410771 71.482 0 72.8669 0H77H155.462C157.87 0 159.733 2.1129 159.43 4.50232L150.443 75.5023C150.19 77.5013 148.489 79 146.474 79H7.78403C5.66106 79 3.9079 77.3415 3.79019 75.2218L0.29306 12.2478Z" fill="url(#paint0_linear_117_5)" />
-                  <defs><linearGradient id="paint0_linear_117_5" x1="38.7619" y1="8.71323" x2="66.9106" y2="82.8317" gradientUnits="userSpaceOnUse"><stop stopColor="#C3BBFF" /><stop offset="1" stopColor="#51469A" /></linearGradient></defs>
-                </svg>
-              </span>
-              <span className="export-text">{exporting ? "Exportando..." : "Exportar"}</span>
-            </button>
-          )}
-
         </div>
       </div>
+
+      {/* Tab lateral mobile (flechita en el borde izquierdo) */}
+      <button
+        className="horarios-sidebar-tab"
+        onClick={() => setSidebarOpen(s => !s)}
+        aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
+      >
+        {sidebarOpen ? "‹" : "›"}
+      </button>
+
+      {/* ── Área principal ────────────────────────────── */}
+      <div className="horarios-main">
+
+        {/* Toolbar */}
+        <div className="horarios-toolbar">
+          {/* Izquierda: botón abrir sidebar (desktop) */}
+          <button className="horarios-sidebar-toggle horarios-sidebar-toggle--open" onClick={() => setSidebarOpen(s => !s)} title="Menú">
+            {sidebarOpen ? "‹" : "☰"}
+          </button>
+
+          {/* Centro: toggle cuatrimestre */}
+          <div className="horarios-toolbar__center">
+            <div className="cuatri-toggle-group">
+              <span className="cuatri-toggle-label">Cuatrimestre</span>
+              <label className="cuatri-toggle">
+                <input
+                  type="checkbox"
+                  checked={cuatrimestre === 2}
+                  onChange={e => {
+                    setCuatrimestre(e.target.checked ? 2 : 1);
+                    setActivaMatId(null);
+                  }}
+                />
+                <div className="cuatri-toggle__track" />
+              </label>
+            </div>
+          </div>
+
+          {/* Derecha: Limpiar + Exportar */}
+          <div className="horarios-toolbar__actions">
+            {visiblePicks.length > 0 && (
+              <button
+                className="horarios-toolbar-btn horarios-toolbar-btn--danger"
+                onClick={() => {
+                  const next = new Map(picks);
+                  for (const [id, pick] of picks) {
+                    if (pick.cuatrimestre === 0 || pick.cuatrimestre === cuatrimestre) next.delete(id);
+                  }
+                  setPicks(next);
+                  setActivaMatId(null);
+                }}
+              >
+                Limpiar
+              </button>
+            )}
+            {visiblePicks.length > 0 && (
+              <button className="export-btn" onClick={handleExportar} disabled={exporting}>
+                <span className="folderContainer">
+                  <svg className="fileBack" width="146" height="113" viewBox="0 0 146 113" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 4C0 1.79086 1.79086 0 4 0H50.3802C51.8285 0 53.2056 0.627965 54.1553 1.72142L64.3303 13.4371C65.2799 14.5306 66.657 15.1585 68.1053 15.1585H141.509C143.718 15.1585 145.509 16.9494 145.509 19.1585V109C145.509 111.209 143.718 113 141.509 113H3.99999C1.79085 113 0 111.209 0 109V4Z" fill="url(#paint0_linear_117_4)" />
+                    <defs><linearGradient id="paint0_linear_117_4" x1="0" y1="0" x2="72.93" y2="95.4804" gradientUnits="userSpaceOnUse"><stop stopColor="#8F88C2" /><stop offset="1" stopColor="#5C52A2" /></linearGradient></defs>
+                  </svg>
+                  <svg className="filePage" width="88" height="99" viewBox="0 0 88 99" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="88" height="99" fill="url(#paint0_linear_117_6)" />
+                    <defs><linearGradient id="paint0_linear_117_6" x1="0" y1="0" x2="81" y2="160.5" gradientUnits="userSpaceOnUse"><stop stopColor="white" /><stop offset="1" stopColor="#686868" /></linearGradient></defs>
+                  </svg>
+                  <svg className="fileFront" width="160" height="79" viewBox="0 0 160 79" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0.29306 12.2478C0.133905 9.38186 2.41499 6.97059 5.28537 6.97059H30.419H58.1902C59.5751 6.97059 60.9288 6.55982 62.0802 5.79025L68.977 1.18034C70.1283 0.410771 71.482 0 72.8669 0H77H155.462C157.87 0 159.733 2.1129 159.43 4.50232L150.443 75.5023C150.19 77.5013 148.489 79 146.474 79H7.78403C5.66106 79 3.9079 77.3415 3.79019 75.2218L0.29306 12.2478Z" fill="url(#paint0_linear_117_5)" />
+                    <defs><linearGradient id="paint0_linear_117_5" x1="38.7619" y1="8.71323" x2="66.9106" y2="82.8317" gradientUnits="userSpaceOnUse"><stop stopColor="#C3BBFF" /><stop offset="1" stopColor="#51469A" /></linearGradient></defs>
+                  </svg>
+                </span>
+                <span className="export-text">{exporting ? "Exportando..." : "Exportar"}</span>
+              </button>
+            )}
+          </div>
+        </div>
 
       {/* ── Grilla ───────────────────────────────────── */}
       <div className="horarios-grilla-wrapper" ref={grillaRef}>
@@ -557,6 +596,7 @@ export default function HorariosPage() {
           </div>
         )}
       </div>
+      </div>{/* horarios-main */}
     </div>
   );
 }
