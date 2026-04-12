@@ -341,8 +341,8 @@
   color: #7193ff;
 }
 
-.foro-vote__btn--up.active   { color: #ff4500 !important; }
-.foro-vote__btn--down.active { color: #7193ff !important; }
+.foro-vote__btn--up.active   { color: #7193ff !important; }
+.foro-vote__btn--down.active { color: #ff0000 !important; }
 
 .foro-vote__btn:disabled {
   opacity: 0.4;
@@ -357,8 +357,8 @@
   min-width: 20px;
 }
 
-.foro-vote__score--positive { color: #ff4500; }
-.foro-vote__score--negative { color: #7193ff; }
+.foro-vote__score--positive { color: #7193ff; }
+.foro-vote__score--negative { color: #ff0000; }
 
 /* Vertical vote (en detail page) */
 .foro-vote--vertical {

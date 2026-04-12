@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/app/lib/supabase/client";
+import { findUntrustedUrls } from "@/app/lib/contentSecurity";
 
 type TipoPost = "Pregunta" | "Recurso" | "Debate" | "Aviso";
 
@@ -99,6 +100,12 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
   const handlePublicar = async () => {
     if (!titulo.trim()) { setError("El título es obligatorio."); return; }
     if (!contenido.trim()) { setError("El contenido es obligatorio."); return; }
+
+    const untrusted = findUntrustedUrls(titulo + ' ' + contenido);
+    if (untrusted.length > 0) {
+      setError(`Solo se permiten links de sitios conocidos (UTN, YouTube, GitHub, Wikipedia, etc.). Revisá: ${untrusted[0]}`);
+      return;
+    }
 
     setEnviando(true);
     setError("");

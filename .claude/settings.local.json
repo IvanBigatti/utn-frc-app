@@ -9,7 +9,8 @@
       "Bash(find /Users/ivanbigatti/Documents/Proyectos/utn-frc-app -maxdepth 2 -type f \\\\\\(-name *.sql -o -name .env* -o -name next.config.* \\\\\\))",
       "mcp__claude_ai_Supabase__execute_sql",
       "mcp__claude_ai_Supabase__list_tables",
-      "Bash(grep -E \"\\\\.\\(sql|ts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(sql|ts\\)$\")",
+      "Bash(find /c/Users/Ivan/Documents/Proyectos/utn-frc-app/app -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec grep -l \"redirect\\\\|fetch\" {} \\\\;)"
     ]
   }
 }
