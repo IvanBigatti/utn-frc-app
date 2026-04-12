@@ -1,0 +1,270 @@
+/* ── Página ───────────────────────────────────────── */
+.perfil-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  min-height: 100vh;
+}
+
+/* ── Header de perfil ─────────────────────────────── */
+.perfil-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 36px;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.perfil-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.perfil-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 3px solid #e5e7eb;
+  background: #f3f4f6;
+  object-fit: cover;
+}
+
+.perfil-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.perfil-username {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perfil-email {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ── Sección ──────────────────────────────────────── */
+.perfil-section {
+  margin-bottom: 28px;
+}
+
+.perfil-section__title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #9ca3af;
+  margin: 0 0 12px;
+}
+
+/* ── Avatar picker ────────────────────────────────── */
+.perfil-avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+@media (max-width: 480px) {
+  .perfil-avatar-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 14px;
+  }
+}
+
+.perfil-avatar-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 6px;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.perfil-avatar-option:hover {
+  background: #f3f4f6;
+}
+
+.perfil-avatar-option img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: #f3f4f6;
+  transition: border-color 0.15s, transform 0.15s;
+  object-fit: cover;
+}
+
+@media (max-width: 480px) {
+  .perfil-avatar-option img {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.perfil-avatar-option.selected img {
+  border-color: #2563eb;
+  transform: scale(1.08);
+}
+
+.perfil-avatar-option span {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.perfil-avatar-option.selected span {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+/* ── Métricas ─────────────────────────────────────── */
+.perfil-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .perfil-metrics {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+}
+
+.perfil-metric-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.perfil-metric-card__value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1e3a5f;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.perfil-metric-card__label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* ── Lista de posts ───────────────────────────────── */
+.perfil-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perfil-post-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.perfil-post-item:hover {
+  border-color: #93c5fd;
+}
+
+.perfil-post-item__score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  min-width: 28px;
+}
+
+.perfil-post-item__score svg {
+  color: #9ca3af;
+}
+
+.perfil-post-item__score--positive { color: #16a34a; }
+.perfil-post-item__score--negative { color: #dc2626; }
+
+.perfil-post-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.perfil-post-item__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perfil-post-item__meta {
+  font-size: 12px;
+  color: #9ca3af;
+  display: flex;
+  gap: 10px;
+}
+
+/* ── Empty / loading ──────────────────────────────── */
+.perfil-empty {
+  text-align: center;
+  padding: 32px;
+  color: #9ca3af;
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.perfil-loading {
+  text-align: center;
+  padding: 80px 0;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* ── Save indicator ───────────────────────────────── */
+.perfil-saved {
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  height: 18px;
+  transition: opacity 0.3s;
+}

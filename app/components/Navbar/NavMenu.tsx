@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { signOut } from '@/app/actions/auth'
+import { getAvatarSrc } from '@/app/components/avatars'
 
 const NAV_LINKS = [
   { href: '/armadorHorarios', label: 'Armador de Horarios' },
@@ -13,24 +14,34 @@ const NAV_LINKS = [
 
 type Props = {
   email: string | null
+  avatarKey: string | null
 }
 
-export default function NavMenu({ email }: Props) {
+export default function NavMenu({ email, avatarKey }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
     <>
-      {/* Botón hamburger (mobile) + botón acción (desktop) */}
+      {/* Derecha: avatar + cerrar sesión (desktop) + hamburger (mobile) */}
       <div className="flex items-center gap-2 md:order-2">
         {email ? (
-          <form action={signOut} className="hidden md:block">
-            <button
-              type="submit"
-              className="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors px-3 py-2"
-            >
-              Cerrar sesión
-            </button>
-          </form>
+          <div className="hidden md:flex items-center gap-3">
+            <Link href="/perfil" className="flex-shrink-0" title="Mi perfil">
+              <img
+                src={getAvatarSrc(avatarKey)}
+                alt="Perfil"
+                className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-blue-400 transition-colors object-cover bg-gray-100"
+              />
+            </Link>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors px-3 py-2"
+              >
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
         ) : (
           <Link
             href="/login"
@@ -70,9 +81,21 @@ export default function NavMenu({ email }: Props) {
             </li>
           ))}
 
-          {/* En mobile: email + logout dentro del menú */}
+          {/* Mobile: perfil + email + logout */}
           {email && (
-            <li className="md:hidden border-t border-gray-200 mt-2 pt-2 flex flex-col gap-2">
+            <li className="md:hidden border-t border-gray-200 mt-2 pt-2 flex flex-col gap-1">
+              <Link
+                href="/perfil"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+              >
+                <img
+                  src={getAvatarSrc(avatarKey)}
+                  alt="Perfil"
+                  className="w-6 h-6 rounded-full border border-gray-200 bg-gray-100"
+                />
+                Mi perfil
+              </Link>
               <span className="px-3 py-1 text-xs text-gray-400">{email}</span>
               <form action={signOut}>
                 <button

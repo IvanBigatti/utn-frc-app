@@ -6,6 +6,16 @@ export default async function Navbar() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  let avatarKey: string | null = null
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('avatar_key')
+      .eq('id', user.id)
+      .maybeSingle()
+    avatarKey = profile?.avatar_key ?? null
+  }
+
   return (
     <nav className="bg-white fixed w-full z-20 top-0 start-0 border-b border-gray-200">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-4 h-14">
@@ -14,7 +24,7 @@ export default async function Navbar() {
           <span className="text-xl font-bold text-gray-900 tracking-tight">TUTN</span>
         </Link>
 
-        <NavMenu email={user?.email ?? null} />
+        <NavMenu email={user?.email ?? null} avatarKey={avatarKey} />
 
       </div>
     </nav>

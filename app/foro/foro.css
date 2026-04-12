@@ -214,6 +214,42 @@
   color: #ccc;
 }
 
+/* ── Autor del post ───────────────────────────────── */
+.foro-post-card__author {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: #1c1c1c;
+  font-size: 12px;
+}
+
+.foro-post-card__author-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.foro-post-card__author--anon {
+  color: #878a8c;
+  font-style: italic;
+}
+
+.foro-post-card__author-avatar--anon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
 .foro-post-card__titulo {
   font-size: 18px;
   font-weight: 500;

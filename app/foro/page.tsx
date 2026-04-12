@@ -6,6 +6,7 @@ import { createClient } from "@/app/lib/supabase/client";
 import FiltroPanel from "./FiltroPanel";
 import "./foro.css";
 import NuevoPostPanel from "./formForo";
+import { getAvatarSrc } from "@/app/components/avatars";
 
 type TipoPost = "Pregunta" | "Recurso" | "Debate" | "Aviso";
 
@@ -15,6 +16,7 @@ type Post = {
   contenido: string;
   created_at: string;
   auth_user_id: string;
+  anonimo: boolean;
   ingenieria_id: number | null;
   ingenieria: { id: number; nombre: string } | null;
   anio: number | null;
@@ -24,6 +26,8 @@ type Post = {
   vote_score: number;
   comment_count: number;
 };
+
+type AuthorInfo = { name: string; avatarKey: string | null };
 
 type Filtros = {
   carreraId: number | null;
@@ -45,6 +49,7 @@ export default function ForoPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>("recientes");
   const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
+  const [authorMap, setAuthorMap] = useState<Record<string, AuthorInfo>>({});
 
   const [filtros, setFiltros] = useState<Filtros>({
     carreraId: null, anio: null, materiaId: null, comisionId: null, tipo: null,
@@ -62,7 +67,7 @@ export default function ForoPage() {
     let query = supabase
       .from("foro_post_summary")
       .select(`
-        id, titulo, contenido, created_at, auth_user_id,
+        id, titulo, contenido, created_at, auth_user_id, anonimo,
         ingenieria_id, anio, tipo, vote_score, comment_count,
         comision:comision_id ( id, nombre ),
         materia:materia_id ( id, nombre ),
@@ -82,10 +87,33 @@ export default function ForoPage() {
     }
 
     const { data, error } = await query;
-    if (!error && data) setPosts(data as unknown as Post[]);
+    if (error || !data) { setLoading(false); return; }
+
+    const fetchedPosts = data as unknown as Post[];
+    setPosts(fetchedPosts);
+
+    // Cargar info de autores no anónimos
+    const uids = [...new Set(fetchedPosts.filter(p => !p.anonimo).map(p => p.auth_user_id))];
+    if (uids.length > 0) {
+      const [emailsRes, profilesRes] = await Promise.all([
+        supabase.rpc("get_user_emails", { user_ids: uids }),
+        supabase.from("profiles").select("id, avatar_key").in("id", uids),
+      ]);
+      const map: Record<string, AuthorInfo> = {};
+      uids.forEach(uid => { map[uid] = { name: "usuario", avatarKey: null }; });
+      (emailsRes.data ?? []).forEach((row: { id: string; email: string }) => {
+        if (map[row.id]) map[row.id].name = row.email.split("@")[0];
+      });
+      (profilesRes.data ?? []).forEach((p: { id: string; avatar_key: string | null }) => {
+        if (map[p.id]) map[p.id].avatarKey = p.avatar_key;
+      });
+      setAuthorMap(map);
+    }
+
     setLoading(false);
   }, [filtros, sortOrder]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
   // Fetch user's votes for the current visible posts
@@ -227,6 +255,26 @@ export default function ForoPage() {
                 {/* Content column */}
                 <div className="foro-post-card__body">
                   <div className="foro-post-card__meta">
+                    {/* Autor */}
+                    {post.anonimo ? (
+                      <span className="foro-post-card__author foro-post-card__author--anon">
+                        <span className="foro-post-card__author-avatar foro-post-card__author-avatar--anon">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg>
+                        </span>
+                        Anónimo
+                      </span>
+                    ) : (
+                      <span className="foro-post-card__author">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          className="foro-post-card__author-avatar"
+                          src={getAvatarSrc(authorMap[post.auth_user_id]?.avatarKey)}
+                          alt=""
+                        />
+                        {authorMap[post.auth_user_id]?.name ?? "usuario"}
+                      </span>
+                    )}
+                    <span className="foro-post-card__sep">·</span>
                     {post.ingenieria?.nombre && (
                       <span className="foro-post-card__ingenieria">{post.ingenieria.nombre}</span>
                     )}
@@ -240,7 +288,7 @@ export default function ForoPage() {
                       <span className="foro-post-card__tag">{post.materia.nombre}</span>
                     )}
                     {post.comision?.nombre && (
-                      <span className="foro-post-card__comision">  {post.comision.nombre}</span>
+                      <span className="foro-post-card__comision">{post.comision.nombre}</span>
                     )}
                     <span className="foro-post-card__sep">·</span>
                     <span>{new Date(post.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</span>
