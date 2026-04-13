@@ -57,6 +57,7 @@ export default function PostDetailPage() {
   const [postReportado, setPostReportado] = useState(false);
   const [comentariosReportados, setComentariosReportados] = useState<Set<number>>(new Set());
   const [esMod, setEsMod] = useState(false);
+  const [modSet, setModSet] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -131,8 +132,12 @@ export default function PostDetailPage() {
       (commentData as Comment[]).forEach((c) => {
         if (!c.anonimo && !uids.includes(c.auth_user_id)) uids.push(c.auth_user_id);
       });
-      const names = await fetchAuthorNames(uids);
+      const [names, modsRes] = await Promise.all([
+        fetchAuthorNames(uids),
+        supabase.from("moderadores").select("user_id").in("user_id", uids),
+      ]);
       setAuthorNames(names);
+      setModSet(new Set((modsRes.data ?? []).map((m: { user_id: string }) => m.user_id)));
     }
 
     setLoading(false);
@@ -326,7 +331,7 @@ export default function PostDetailPage() {
                 <span className="foro-post-card__comision">· Com. {post.comision.nombre}</span>
               )}
               <span className="foro-post-card__sep">·</span>
-              <span>publicado por <strong>{displayName(post.auth_user_id, post.anonimo)}</strong></span>
+              <span>publicado por <strong>{displayName(post.auth_user_id, post.anonimo)}</strong>{!post.anonimo && modSet.has(post.auth_user_id) && <span className="mod-badge">Mod</span>}</span>
               <span className="foro-post-card__sep">·</span>
               <span>{new Date(post.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}</span>
             </div>
@@ -401,6 +406,7 @@ export default function PostDetailPage() {
                 <div className="foro-comment-card__header">
                   <span className="foro-comment-card__author">
                     {displayName(c.auth_user_id, c.anonimo)}
+                    {!c.anonimo && modSet.has(c.auth_user_id) && <span className="mod-badge">Mod</span>}
                   </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span className="foro-comment-card__fecha">

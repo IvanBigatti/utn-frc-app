@@ -25,3 +25,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   background-color: #ffffff;
 }
+
+.mod-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #6e40c9;
+  color: #fff;
+  vertical-align: middle;
+  margin-left: 5px;
+  line-height: 1.6;
+}

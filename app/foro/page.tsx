@@ -28,7 +28,7 @@ type Post = {
   comment_count: number;
 };
 
-type AuthorInfo = { name: string; avatarKey: string | null };
+type AuthorInfo = { name: string; avatarKey: string | null; isMod: boolean };
 
 type Filtros = {
   carreraId: number | null;
@@ -102,12 +102,14 @@ export default function ForoPage() {
     // Cargar info de autores no anónimos
     const uids = [...new Set(fetchedPosts.filter(p => !p.anonimo).map(p => p.auth_user_id))];
     if (uids.length > 0) {
-      const [emailsRes, profilesRes] = await Promise.all([
+      const [emailsRes, profilesRes, modsRes] = await Promise.all([
         supabase.rpc("get_user_emails", { user_ids: uids }),
         supabase.from("profiles").select("id, avatar_key").in("id", uids),
+        supabase.from("moderadores").select("user_id").in("user_id", uids),
       ]);
+      const modSet = new Set((modsRes.data ?? []).map((m: { user_id: string }) => m.user_id));
       const map: Record<string, AuthorInfo> = {};
-      uids.forEach(uid => { map[uid] = { name: "usuario", avatarKey: null }; });
+      uids.forEach(uid => { map[uid] = { name: "usuario", avatarKey: null, isMod: modSet.has(uid) }; });
       (emailsRes.data ?? []).forEach((row: { id: string; email: string }) => {
         if (map[row.id]) map[row.id].name = row.email.split("@")[0];
       });
@@ -279,6 +281,7 @@ export default function ForoPage() {
                           alt=""
                         />
                         {authorMap[post.auth_user_id]?.name ?? "usuario"}
+                        {authorMap[post.auth_user_id]?.isMod && <span className="mod-badge">Mod</span>}
                       </span>
                     )}
                     <span className="foro-post-card__sep">·</span>

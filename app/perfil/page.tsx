@@ -31,6 +31,7 @@ export default function PerfilPage() {
   const [metrics, setMetrics] = useState<Metrics>({ posts: 0, votes: 0, archivos: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
   const [saved, setSaved] = useState(false);
+  const [isMod, setIsMod] = useState(false);
 
   const fetchData = useCallback(async (uid: string) => {
     const [profileRes, postsCountRes, archivosRes, postsRes] = await Promise.all([
@@ -62,6 +63,10 @@ export default function PerfilPage() {
     });
 
     setPosts((postsRes.data ?? []) as Post[]);
+
+    const { data: modData } = await supabase.from("moderadores").select("user_id").eq("user_id", uid).maybeSingle();
+    setIsMod(!!modData);
+
     setLoading(false);
   }, []);
 
@@ -104,7 +109,10 @@ export default function PerfilPage() {
           />
         </div>
         <div className="perfil-info">
-          <h1 className="perfil-username">{username}</h1>
+          <h1 className="perfil-username">
+            {username}
+            {isMod && <span className="mod-badge">Mod</span>}
+          </h1>
           <p className="perfil-email">{email}</p>
         </div>
       </div>
