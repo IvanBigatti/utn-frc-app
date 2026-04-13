@@ -28,6 +28,16 @@ export default async function ResultadosPage({ searchParams }: { searchParams: S
     supabase.auth.getUser(),
   ])
 
+  let esModerador = false
+  if (user) {
+    const { data: mod } = await supabase
+      .from('moderadores')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    esModerador = !!mod
+  }
+
   const materiaNombre = archivos?.[0]?.materia_nombre ?? 'esta materia'
 
   return (
@@ -45,6 +55,8 @@ export default async function ResultadosPage({ searchParams }: { searchParams: S
       <ResultadosList
         archivos={archivos ?? []}
         usuarioLogueado={!!user}
+        usuarioId={user?.id ?? null}
+        esModerador={esModerador}
         materiaNombre={materiaNombre}
       />
     </main>

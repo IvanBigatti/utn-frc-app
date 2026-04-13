@@ -55,4 +55,12 @@ export async function uploadToDrive(
   return fileId
 }
 
+export async function deleteFromDrive(fileId: string): Promise<void> {
+  const drive = getDriveClient()
+  const res = await drive.files.delete({ fileId })
+  if (res.status !== 204) {
+    throw new Error(`Drive respondió con status ${res.status}`)
+  }
+}
+
 export { getDriveViewUrl, getDriveDownloadUrl } from './driveUrls'

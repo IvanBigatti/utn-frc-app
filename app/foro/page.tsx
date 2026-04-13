@@ -7,6 +7,7 @@ import FiltroPanel from "./FiltroPanel";
 import "./foro.css";
 import NuevoPostPanel from "./formForo";
 import { getAvatarSrc } from "@/app/components/avatars";
+import { eliminarPostMod } from "@/app/actions/moderador";
 
 type TipoPost = "Pregunta" | "Recurso" | "Debate" | "Aviso";
 
@@ -47,6 +48,7 @@ export default function ForoPage() {
   const [filtroOpen, setFiltroOpen] = useState(false);
   const [nuevoPostOpen, setNuevoPostOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [esMod, setEsMod] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>("recientes");
   const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
   const [authorMap, setAuthorMap] = useState<Record<string, AuthorInfo>>({});
@@ -56,8 +58,13 @@ export default function ForoPage() {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const uid = session?.user?.id ?? null;
+      setUserId(uid);
+      if (uid) {
+        const { data } = await supabase.from("moderadores").select("user_id").eq("user_id", uid).maybeSingle();
+        setEsMod(!!data);
+      }
     });
   }, []);
 
@@ -314,6 +321,22 @@ export default function ForoPage() {
                           <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
                         </svg>
                         Eliminar
+                      </button>
+                    )}
+                    {esMod && userId !== post.auth_user_id && (
+                      <button
+                        className="foro-post-card__action-btn foro-post-card__action-btn--danger"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!window.confirm("¿Eliminar esta publicación como moderador?")) return;
+                          const result = await eliminarPostMod(post.id);
+                          if (result.error) { alert(result.error); return; }
+                          setPosts((prev) => prev.filter((p) => p.id !== post.id));
+                        }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                        </svg>
                       </button>
                     )}
                   </div>

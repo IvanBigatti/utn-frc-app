@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/client";
+import { findUntrustedUrls } from "@/app/lib/contentSecurity";
+import { reportarPost, reportarComentario, quitarReportePost, quitarReporteComentario } from "@/app/actions/reportar";
+import { eliminarPostMod, eliminarComentarioMod } from "@/app/actions/moderador";
 import "../foro.css";
 
 type TipoPost = "Pregunta" | "Recurso" | "Debate" | "Aviso";
@@ -50,10 +53,19 @@ export default function PostDetailPage() {
   const [newCommentAnonimo, setNewCommentAnonimo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState("");
+  const [reportandoPost, setReportandoPost] = useState(false);
+  const [postReportado, setPostReportado] = useState(false);
+  const [comentariosReportados, setComentariosReportados] = useState<Set<number>>(new Set());
+  const [esMod, setEsMod] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const uid = session?.user?.id ?? null;
+      setUserId(uid);
+      if (uid) {
+        const { data } = await supabase.from("moderadores").select("user_id").eq("user_id", uid).maybeSingle();
+        setEsMod(!!data);
+      }
     });
   }, []);
 
@@ -98,15 +110,18 @@ export default function PostDetailPage() {
     const commentData = await fetchComments();
     setComments(commentData as Comment[]);
 
-    // Current user's vote
+    // Current user's vote + reports
     if (userId) {
-      const { data: voteData } = await supabase
-        .from("foro_vote")
-        .select("value")
-        .eq("post_id", postId)
-        .eq("auth_user_id", userId)
-        .maybeSingle();
+      const [{ data: voteData }, { data: postReportData }, { data: commentReportData }] = await Promise.all([
+        supabase.from("foro_vote").select("value").eq("post_id", postId).eq("auth_user_id", userId).maybeSingle(),
+        supabase.from("foro_report").select("id").eq("post_id", postId).eq("auth_user_id", userId).maybeSingle(),
+        supabase.from("foro_comment_report").select("comment_id").eq("auth_user_id", userId),
+      ]);
       setUserVote(voteData ? (voteData.value as UserVote) : null);
+      setPostReportado(!!postReportData);
+      if (commentReportData) {
+        setComentariosReportados(new Set(commentReportData.map((r: { comment_id: number }) => r.comment_id)));
+      }
     }
 
     // Author names (only for non-anonymous entries)
@@ -147,6 +162,13 @@ export default function PostDetailPage() {
 
   const handleCommentSubmit = async () => {
     if (!userId || !newComment.trim()) return;
+
+    const untrusted = findUntrustedUrls(newComment);
+    if (untrusted.length > 0) {
+      setCommentError(`Solo se permiten links de sitios conocidos (UTN, YouTube, GitHub, Wikipedia, etc.). Revisá: ${untrusted[0]}`);
+      return;
+    }
+
     setSubmitting(true);
     setCommentError("");
 
@@ -190,6 +212,42 @@ export default function PostDetailPage() {
     await supabase.from("foro_comment").delete().eq("id", commentId);
     setComments((prev) => prev.filter((c) => c.id !== commentId));
     setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
+  };
+
+  const handleReportarPost = async () => {
+    if (postReportado) {
+      setReportandoPost(true);
+      const result = await quitarReportePost(postId);
+      if (result.error) { alert(result.error); setReportandoPost(false); return; }
+      setPostReportado(false);
+      setReportandoPost(false);
+      return;
+    }
+    if (!window.confirm("¿Querés reportar esta publicación como contenido inapropiado?")) return;
+    setReportandoPost(true);
+    const result = await reportarPost(postId);
+    if (result.error) { alert(result.error); setReportandoPost(false); return; }
+    if (result.deleted) { alert("La publicación fue eliminada por acumular demasiados reportes."); router.push("/foro"); return; }
+    setPostReportado(true);
+    setReportandoPost(false);
+  };
+
+  const handleReportarComentario = async (comentarioId: number) => {
+    if (comentariosReportados.has(comentarioId)) {
+      const result = await quitarReporteComentario(comentarioId);
+      if (result.error) { alert(result.error); return; }
+      setComentariosReportados((prev) => { const s = new Set(prev); s.delete(comentarioId); return s; });
+      return;
+    }
+    if (!window.confirm("¿Querés reportar este comentario como contenido inapropiado?")) return;
+    const result = await reportarComentario(comentarioId);
+    if (result.error) { alert(result.error); return; }
+    if (result.deleted) {
+      setComments((prev) => prev.filter((c) => c.id !== comentarioId));
+      setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
+      return;
+    }
+    setComentariosReportados((prev) => new Set(prev).add(comentarioId));
   };
 
   const displayName = (uid: string, isAnon: boolean) =>
@@ -286,6 +344,16 @@ export default function PostDetailPage() {
               {!userId && (
                 <span className="foro-detail__vote-hint">· Iniciá sesión para votar</span>
               )}
+              {userId && post.auth_user_id !== userId && (
+                <button
+                  className="foro-post-card__action-btn"
+                  onClick={handleReportarPost}
+                  disabled={reportandoPost}
+                  style={{ marginLeft: "auto" }}
+                >
+                  {reportandoPost ? "..." : postReportado ? "⚑ Quitar reporte" : "⚑ Reportar"}
+                </button>
+              )}
               {userId && post.auth_user_id === userId && (
                 <button
                   className="foro-post-card__action-btn foro-post-card__action-btn--danger"
@@ -300,6 +368,21 @@ export default function PostDetailPage() {
                     <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
                   </svg>
                   Eliminar
+                </button>
+              )}
+              {esMod && userId !== post.auth_user_id && (
+                <button
+                  className="foro-post-card__action-btn foro-post-card__action-btn--danger"
+                  onClick={async () => {
+                    if (!window.confirm("¿Eliminar esta publicación como moderador?")) return;
+                    const result = await eliminarPostMod(post.id);
+                    if (result.error) { alert(result.error); return; }
+                    router.push("/foro");
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                  </svg>
                 </button>
               )}
             </div>
@@ -323,9 +406,32 @@ export default function PostDetailPage() {
                     <span className="foro-comment-card__fecha">
                       {new Date(c.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
+                    {userId && userId !== c.auth_user_id && (
+                      <button
+                        className="foro-comment-card__eliminar"
+                        onClick={() => handleReportarComentario(c.id)}
+                      >
+                        {comentariosReportados.has(c.id) ? "Quitar reporte" : "Reportar"}
+                      </button>
+                    )}
                     {userId === c.auth_user_id && (
                       <button className="foro-comment-card__eliminar" onClick={() => handleCommentDelete(c.id)}>
                         Eliminar
+                      </button>
+                    )}
+                    {esMod && userId !== c.auth_user_id && (
+                      <button
+                        className="foro-comment-card__eliminar"
+                        style={{ color: "#991b1b" }}
+                        onClick={async () => {
+                          if (!window.confirm("¿Eliminar este comentario como moderador?")) return;
+                          const result = await eliminarComentarioMod(c.id);
+                          if (result.error) { alert(result.error); return; }
+                          setComments((prev) => prev.filter((x) => x.id !== c.id));
+                          setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
+                        }}
+                      >
+                        🗑
                       </button>
                     )}
                   </div>

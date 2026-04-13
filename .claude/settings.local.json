@@ -10,7 +10,15 @@
       "mcp__claude_ai_Supabase__execute_sql",
       "mcp__claude_ai_Supabase__list_tables",
       "Bash(grep -E \"\\\\.\\(sql|ts\\)$\")",
-      "Bash(find /c/Users/Ivan/Documents/Proyectos/utn-frc-app/app -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec grep -l \"redirect\\\\|fetch\" {} \\\\;)"
+      "Bash(find /c/Users/Ivan/Documents/Proyectos/utn-frc-app/app -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec grep -l \"redirect\\\\|fetch\" {} \\\\;)",
+      "Bash(find /Users/ivanbigatti/Proyectos/utn-frc-app/app -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec grep -l \"delete\\\\|remove\\\\|eliminar\" {} \\\\;)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "Bash(cat)",
+      "Read(//tmp/**)",
+      "Bash(git -C /Users/ivanbigatti/Proyectos/utn-frc-app log --all --oneline -- app/components/SearchModal/SearchModal.tsx)",
+      "Bash(git -C /Users/ivanbigatti/Proyectos/utn-frc-app show 5ea3d58:app/components/SearchModal/SearchModal.tsx)",
+      "Bash(git -C /Users/ivanbigatti/Proyectos/utn-frc-app show 3dc79a0:app/components/SearchModal/SearchModal.tsx)",
+      "Bash(git -C /Users/ivanbigatti/Proyectos/utn-frc-app show 37cc29a:app/components/SearchModal/SearchModal.tsx)"
     ]
   }
 }

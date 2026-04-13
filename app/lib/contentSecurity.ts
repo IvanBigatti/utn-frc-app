@@ -35,8 +35,24 @@ const TRUSTED_DOMAINS = [
 
 const URL_REGEX = /https?:\/\/[^\s\])"'>]+/gi;
 
+// Bare domains: www.algo.com o algo.com/path (sin protocolo)
+const BARE_DOMAIN_REGEX = /(?:^|[\s(])(?:www\.)\S+|(?:^|[\s(])\S+\.(?:com|net|org|io|edu|gov|ar|uy|br|cl|co|info|online|site|app|dev|ai|me|ly|tv|cc|xyz|tech)\b(?:\/\S*)?/gi;
+
+const COMMON_WORDS_WITH_DOTS = new Set(['e.g', 'i.e', 'etc', 'vs', 'no', 'ok']);
+
 export function extractUrls(text: string): string[] {
-  return [...text.matchAll(URL_REGEX)].map((m) => m[0]);
+  const withProtocol = [...text.matchAll(URL_REGEX)].map((m) => m[0]);
+
+  const bare = [...text.matchAll(BARE_DOMAIN_REGEX)]
+    .map((m) => m[0].trim())
+    .filter((raw) => {
+      const lower = raw.toLowerCase().replace(/\.$/, '');
+      if (COMMON_WORDS_WITH_DOTS.has(lower)) return false;
+      return true;
+    })
+    .map((raw) => 'https://' + raw.replace(/^https?:\/\//, ''));
+
+  return [...withProtocol, ...bare];
 }
 
 export function isTrustedUrl(urlStr: string): boolean {

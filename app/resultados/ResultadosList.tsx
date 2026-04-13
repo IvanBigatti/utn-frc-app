@@ -19,6 +19,8 @@ type Archivo = {
 type Props = {
   archivos: Archivo[]
   usuarioLogueado: boolean
+  usuarioId: string | null
+  esModerador: boolean
   materiaNombre: string
 }
 
@@ -29,7 +31,7 @@ const FILTROS = [
   { value: 'tp', label: 'TPs' },
 ]
 
-export default function ResultadosList({ archivos, usuarioLogueado, materiaNombre }: Props) {
+export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, esModerador, materiaNombre }: Props) {
   const [filtroTipo, setFiltroTipo] = useState('todos')
   const [orden, setOrden] = useState<'rating' | 'reciente'>('rating')
 
@@ -92,7 +94,7 @@ export default function ResultadosList({ archivos, usuarioLogueado, materiaNombr
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {filtrados.map(archivo => (
-            <ArchivoCard key={archivo.id} archivo={archivo} usuarioLogueado={usuarioLogueado} />
+            <ArchivoCard key={archivo.id} archivo={archivo} usuarioLogueado={usuarioLogueado} usuarioId={usuarioId} esModerador={esModerador} />
           ))}
         </div>
       )}

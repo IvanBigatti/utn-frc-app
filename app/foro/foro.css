@@ -256,6 +256,8 @@
   color: #1c1c1c;
   margin: 0;
   line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .foro-post-card__preview {
@@ -267,6 +269,8 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Actions footer */
@@ -796,6 +800,8 @@
   color: #1c1c1c;
   margin: 0 0 8px;
   line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .foro-detail__author {
@@ -809,6 +815,8 @@
   color: #3c3c3c;
   line-height: 1.75;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
   margin-bottom: 16px;
 }
 
@@ -878,6 +886,8 @@
   color: #3c3c3c;
   line-height: 1.6;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
   margin: 0;
 }
 
