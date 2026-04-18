@@ -25,6 +25,7 @@ export default function ProgresoPage() {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState<number | null>(null);
+  const [totalHoras, setTotalHoras] = useState<number>(0);
 
   // Obtener usuario
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function ProgresoPage() {
       // Traer relaciones comision-materia
       const { data: rels } = await supabase
         .from("ComisionMaterias")
-        .select("idMateria, idComision, materia(id, nombre)")
+        .select("idMateria, idComision, materia(id, nombre, horas_semanales)")
         .in("idComision", comisiones.map(c => c.id));
 
       if (!rels) { setMateriasPorAnio(new Map()); setLoading(false); return; }
@@ -69,16 +70,17 @@ export default function ProgresoPage() {
         const comision = comisiones.find(c => c.id === rel.idComision);
         if (!comision) continue;
         materiaAnioMap.set(rel.materia.id, {
-          nombre: rel.materia.nombre,
-          anio: comision.año,
-        });
+        nombre: rel.materia.nombre,
+        anio: comision.año,
+        horas_semanales: rel.materia.horas_semanales ?? 0
+      });
       }
 
       // Agrupar por año
       const porAnio = new Map<number, MateriaConAnio[]>();
-      for (const [id, { nombre, anio }] of materiaAnioMap) {
+      for (const [id, { nombre, anio, horas_semanales }] of materiaAnioMap) {
         if (!porAnio.has(anio)) porAnio.set(anio, []);
-        porAnio.get(anio)!.push({ id, nombre, anio });
+        porAnio.get(anio)!.push({ id, nombre, anio, horas_semanales });
       }
 
       // Ordenar materias dentro de cada año
@@ -92,7 +94,46 @@ export default function ProgresoPage() {
     fetch();
   }, [carreraId]);
 
-  // Cargar progreso del usuario para esta carrera
+
+  //traer horas semanales de cada materia
+ useEffect(() => {
+  if (!carreraId || materiasPorAnio.size === 0) {
+    setTotalHoras(0);
+    return;
+  }
+
+  const fetchHoras = async () => {
+    const ids = Array.from(materiasPorAnio.values())
+      .flat()
+      .map(m => m.id);
+
+    if (ids.length === 0) {
+      setTotalHoras(0);
+      return;
+    }
+
+    const { data } = await supabase
+      .from("materia")
+      .select("horas_semanales")
+      .in("id", ids);
+
+    if (!data) {
+      setTotalHoras(0);
+      return;
+    }
+
+    const total = data.reduce(
+      (acc, item) => acc + (item.horas_semanales || 0),
+      0
+    );
+
+    setTotalHoras(total);
+  };
+
+  fetchHoras();
+}, [carreraId, materiasPorAnio]);
+
+  //cargar progreso del usuario
   useEffect(() => {
     if (!userId || !carreraId) { setProgreso(new Map()); return; }
     const fetch = async () => {
@@ -160,8 +201,13 @@ export default function ProgresoPage() {
   const notas = materiasRendidas.map(id => progreso.get(id)).filter((n): n is number => n !== null && n !== undefined);
   const promedio = notas.length > 0 ? (notas.reduce((a, b) => a + b, 0) / notas.length) : 0;
   const porcentaje = todasLasMaterias.length > 0 ? (materiasRendidas.length / todasLasMaterias.length) * 100 : 0;
-
   const aniosOrdenados = Array.from(materiasPorAnio.keys()).sort();
+  const horasAprobadas = Array.from(materiasPorAnio.values())
+  .flat()
+  .filter(m => progreso.has(m.id))
+  .reduce((acc, m: any) => acc + (m.horas_semanales ?? 0), 0);
+
+const horasRestantes = totalHoras - horasAprobadas;
 
   return (
     <div className="progreso-page">
@@ -281,23 +327,66 @@ export default function ProgresoPage() {
 
             {/* Gráfico circular */}
             <div className="progreso-card">
-              <p className="progreso-card__label">Avance visual</p>
-              <div className="progreso-donut-wrapper">
-                <svg viewBox="0 0 100 100" className="progreso-donut">
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#f0f0ee" strokeWidth="12" />
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#1f387e" strokeWidth="12"
-                    strokeDasharray={`${2 * Math.PI * 38 * porcentaje / 100} ${2 * Math.PI * 38}`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 50 50)"
-                    style={{ transition: "stroke-dasharray 0.6s ease" }}
-                  />
-                  <text x="50" y="50" textAnchor="middle" dominantBaseline="central"
-                    fontSize="16" fontWeight="700" fill="#1f387e">
-                    {Math.round(porcentaje)}%
-                  </text>
-                </svg>
-              </div>
-            </div>
+  <p className="progreso-card__label">Horas restantes</p>
+
+  <div className="progreso-donut-wrapper">
+    <svg viewBox="0 0 100 100" className="progreso-donut">
+
+      {/* Fondo */}
+      <circle
+        cx="50"
+        cy="50"
+        r="38"
+        fill="none"
+        stroke="#f0f0ee"
+        strokeWidth="12"
+      />
+
+      {/* Progreso (lo que YA hiciste) */}
+      <circle
+        cx="50"
+        cy="50"
+        r="38"
+        fill="none"
+        stroke="#1f387e"
+        strokeWidth="12"
+        strokeDasharray={`${
+          2 * Math.PI * 38 * (totalHoras > 0 ? horasAprobadas / totalHoras : 0)
+        } ${2 * Math.PI * 38}`}
+        strokeLinecap="round"
+        transform="rotate(-90 50 50)"
+        style={{ transition: "stroke-dasharray 0.6s ease" }}
+      />
+
+      {/* TEXTO CENTRAL */}
+      <text
+        x="50"
+        y="50"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize="14"
+        fontWeight="700"
+        fill="#1f387e"
+      >
+        {totalHoras > 0
+          ? `${totalHoras - horasAprobadas}h`
+          : "0h"}
+      </text>
+
+      {/* Subtexto */}
+      <text
+        x="50"
+        y="65"
+        textAnchor="middle"
+        fontSize="10"
+        fill="#666"
+      >
+        restantes
+      </text>
+
+    </svg>
+  </div>
+</div>
 
             {/* Progreso por año */}
             <div className="progreso-card">
