@@ -21,7 +21,6 @@ export default function UploadForm() {
 
   const [ingenierias, setIngenierias] = useState<Ingenieria[]>([])
   const [materias, setMaterias] = useState<Materia[]>([])
-
   const [carreraId, setCarreraId] = useState<number | null>(null)
   const [anio, setAnio] = useState<number | null>(null)
   const [materiaId, setMateriaId] = useState<number | null>(null)
@@ -29,7 +28,6 @@ export default function UploadForm() {
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [file, setFile] = useState<File | null>(null)
-
   const [loadingMaterias, setLoadingMaterias] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
