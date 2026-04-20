@@ -214,8 +214,13 @@ export default function UploadForm() {
 
       {/* Progress */}
       {uploading && (
-        <div className="upload-progress">
-          <div className="upload-progress__bar" style={{ width: `${progress}%` }} />
+        <div className="upload-progress-wrapper">
+          <div className="upload-progress">
+            <div className="upload-progress__bar" style={{ width: `${progress}%` }} />
+          </div>
+          <p className="upload-scanning-notice">
+            Analizando el archivo por seguridad, esto puede tardar unos segundos...
+          </p>
         </div>
       )}
 

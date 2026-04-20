@@ -6,6 +6,18 @@ import { headers } from 'next/headers'
 
 type ActionResult = { error?: string; message?: string } | undefined
 
+const ALLOWED_DOMAINS = [
+  'gmail.com',
+  'hotmail.com', 'hotmail.com.ar', 'hotmail.es',
+  'outlook.com', 'outlook.com.ar', 'outlook.es',
+  'yahoo.com', 'yahoo.com.ar', 'yahoo.es',
+  'live.com', 'live.com.ar',
+  'icloud.com', 'me.com',
+  'protonmail.com', 'proton.me',
+  'msn.com',
+  'frc.utn.edu.ar', 'utn.edu.ar',
+]
+
 export async function signInWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
 
@@ -20,6 +32,12 @@ export async function signInWithEmail(_prevState: ActionResult, formData: FormDa
 }
 
 export async function signUpWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  const email = formData.get('email') as string
+  const domain = email.split('@')[1]?.toLowerCase()
+  if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
+    return { error: 'Registrate con un email de Gmail, Hotmail, Outlook, Yahoo u otro proveedor conocido.' }
+  }
+
   const supabase = await createClient()
   const headerStore = await headers()
   const origin = headerStore.get('origin')

@@ -43,7 +43,7 @@ export default async function ResultadosPage({ searchParams }: { searchParams: S
   return (
     <main className="max-w-4xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+        <Link href="/" className="text-sm text-blue-600 hover:text-blue-800 dark:hover:text-blue-400">
           ← Volver a buscar
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{materiaNombre}</h1>

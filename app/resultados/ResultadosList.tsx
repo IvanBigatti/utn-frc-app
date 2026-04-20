@@ -57,7 +57,7 @@ export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, e
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 filtroTipo === f.value
                   ? 'bg-blue-600 text-white'
-                  : 'border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  : 'border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-dark hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               {f.label}
