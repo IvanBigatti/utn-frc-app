@@ -124,7 +124,7 @@ export default function HorariosPage() {
         .from("ComisionMaterias")
         .select("idMateria, idComision, horarios, cuatrimestre, materia(id, nombre)")
         .in("idComision", idsComisiones)
-        .in("cuatrimestre", [0, cuatrimestre]);
+        .or(`cuatrimestre.is.null,cuatrimestre.in.(0,${cuatrimestre})`);
 
       if (!rels) { setMaterias([]); setLoadingMaterias(false); return; }
 

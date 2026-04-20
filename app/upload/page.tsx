@@ -10,8 +10,8 @@ export default async function UploadPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Subir material</h1>
-      <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm">
+      <h1 className="text-2xl font-bold text-gray-900  mb-2">Subir material</h1>
+      <p className="text-gray-500  mb-8 text-sm">
         Compartí tus apuntes con el resto de la facultad.
       </p>
       <UploadForm />

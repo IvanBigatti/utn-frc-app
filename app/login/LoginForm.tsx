@@ -4,6 +4,18 @@ import { useActionState, useState } from 'react'
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/app/actions/auth'
 import './loginForm.css'
 
+const ALLOWED_DOMAINS = [
+  'gmail.com',
+  'hotmail.com', 'hotmail.com.ar', 'hotmail.es',
+  'outlook.com', 'outlook.com.ar', 'outlook.es',
+  'yahoo.com', 'yahoo.com.ar', 'yahoo.es',
+  'live.com', 'live.com.ar',
+  'icloud.com', 'me.com',
+  'protonmail.com', 'proton.me',
+  'msn.com',
+  'frc.utn.edu.ar', 'utn.edu.ar',
+]
+
 export default function LoginForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [loginState, loginAction, loginPending] = useActionState(signInWithEmail, undefined)
@@ -23,10 +35,19 @@ export default function LoginForm() {
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    if (!isLogin && password !== confirmPassword) {
-      e.preventDefault()
-      setPasswordError('Las contraseñas no coinciden')
-      return
+    if (!isLogin) {
+      const emailInput = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value
+      const domain = emailInput.split('@')[1]?.toLowerCase()
+      if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
+        e.preventDefault()
+        setPasswordError('Registrate con un email de Gmail, Hotmail, Outlook, Yahoo u otro proveedor conocido.')
+        return
+      }
+      if (password !== confirmPassword) {
+        e.preventDefault()
+        setPasswordError('Las contraseñas no coinciden')
+        return
+      }
     }
     setPasswordError('')
   }
