@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { uploadToDrive } from '@/app/lib/googleDrive'
+import { optimizeFile } from '@/app/lib/fileOptimizer'
 
 const VIRUSTOTAL_API_KEY = process.env.VIRUSTOTAL_API_KEY!
 const MAX_SIZE_BYTES = 20 * 1024 * 1024 // 20 MB
@@ -118,10 +119,13 @@ export async function POST(request: NextRequest) {
     }
 
     // ☁️ Subir a Drive
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const rawBuffer = Buffer.from(await file.arrayBuffer())
+    const { buffer, mimeType: optimizedMimeType } = await optimizeFile(rawBuffer, file.type)
+    const ext = optimizedMimeType === 'image/jpeg' && file.type === 'image/png' ? '.jpg' : ''
+    const baseName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const safeName = `${Date.now()}-${ext ? baseName.replace(/\.png$/i, ext) : baseName}`
 
-    const driveFileId = await uploadToDrive(buffer, safeName, file.type)
+    const driveFileId = await uploadToDrive(buffer, safeName, optimizedMimeType)
 
     // 💾 Guardar en Supabase
     const { data, error } = await supabase
