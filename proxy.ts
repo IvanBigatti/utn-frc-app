@@ -1,6 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PROTECTED_ROUTES = [
+  '/upload',
+  '/foro',
+  '/perfil',
+  '/progreso',
+  '/resultados',
+  '/armadorHorarios',
+]
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -28,15 +37,17 @@ export async function proxy(request: NextRequest) {
   // Refresca la sesión — no borrar esto
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protege rutas de upload: redirige a /login si no hay sesión
-  if (!user && request.nextUrl.pathname.startsWith('/upload')) {
+  const { pathname } = request.nextUrl
+
+  const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
+
+  if (!user && isProtected) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Si ya está logueado y visita /login, redirige al home
-  if (user && request.nextUrl.pathname === '/login') {
+  if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)

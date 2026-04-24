@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { uploadToDrive } from '@/app/lib/googleDrive'
+import { optimizeFile } from '@/app/lib/fileOptimizer'
 
 const VIRUSTOTAL_API_KEY = process.env.VIRUSTOTAL_API_KEY!
 const MAX_SIZE_BYTES = 20 * 1024 * 1024 // 20 MB
@@ -91,8 +92,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 })
     }
 
-    if (!materiaId) {
+    if (!materiaId || isNaN(parseInt(materiaId, 10))) {
       return NextResponse.json({ error: 'La materia es requerida' }, { status: 400 })
+    }
+
+    if (ingenieriaId && isNaN(parseInt(ingenieriaId, 10))) {
+      return NextResponse.json({ error: 'Ingeniería inválida' }, { status: 400 })
     }
 
     if (file.size > MAX_SIZE_BYTES) {
@@ -114,10 +119,13 @@ export async function POST(request: NextRequest) {
     }
 
     // ☁️ Subir a Drive
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const rawBuffer = Buffer.from(await file.arrayBuffer())
+    const { buffer, mimeType: optimizedMimeType } = await optimizeFile(rawBuffer, file.type)
+    const ext = optimizedMimeType === 'image/jpeg' && file.type === 'image/png' ? '.jpg' : ''
+    const baseName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const safeName = `${Date.now()}-${ext ? baseName.replace(/\.png$/i, ext) : baseName}`
 
-    const driveFileId = await uploadToDrive(buffer, safeName, file.type)
+    const driveFileId = await uploadToDrive(buffer, safeName, optimizedMimeType)
 
     // 💾 Guardar en Supabase
     const { data, error } = await supabase
@@ -135,16 +143,17 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[upload] Supabase insert error:', error)
+      return NextResponse.json({ error: 'Error al guardar el archivo' }, { status: 500 })
     }
 
     return NextResponse.json({ archivo: data })
 
   } catch (err: any) {
-    console.error(err)
+    console.error('[upload] Unexpected error:', err)
 
     return NextResponse.json(
-      { error: err.message || 'Error interno del servidor' },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     )
   }

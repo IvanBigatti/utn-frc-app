@@ -93,7 +93,7 @@ export default function PerfilPage() {
   const username = email?.split("@")[0] ?? "usuario";
 
   if (loading) {
-    return <div className="perfil-loading">Cargando perfil...</div>;
+    return <div className="perfil-loading" role="status" aria-live="polite">Cargando perfil...</div>;
   }
 
   return (
@@ -119,7 +119,7 @@ export default function PerfilPage() {
 
       {/* Métricas */}
       <div className="perfil-section">
-        <p className="perfil-section__title">Mis estadísticas</p>
+        <h2 className="perfil-section__title">Mis estadísticas</h2>
         <div className="perfil-metrics">
           <div className="perfil-metric-card">
             <div className="perfil-metric-card__value">{metrics.posts}</div>
@@ -138,7 +138,7 @@ export default function PerfilPage() {
 
       {/* Selector de avatar */}
       <div className="perfil-section">
-        <p className="perfil-section__title">Elegí tu avatar</p>
+        <h2 className="perfil-section__title">Elegí tu avatar</h2>
         <div className="perfil-avatar-grid">
           {AVATARS.map((av) => (
             <button
@@ -162,7 +162,7 @@ export default function PerfilPage() {
 
       {/* Mis publicaciones */}
       <div className="perfil-section">
-        <p className="perfil-section__title">Mis publicaciones en el foro</p>
+        <h2 className="perfil-section__title">Mis publicaciones en el foro</h2>
         {posts.length === 0 ? (
           <div className="perfil-empty">Todavía no publicaste nada en el foro.</div>
         ) : (
@@ -172,6 +172,7 @@ export default function PerfilPage() {
                 key={post.id}
                 className="perfil-post-item"
                 onClick={() => router.push(`/foro/${post.id}`)}
+                aria-label={`Ver publicación: ${post.titulo}`}
               >
                 <div className="perfil-post-item__score">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">

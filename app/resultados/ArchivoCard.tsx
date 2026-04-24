@@ -144,7 +144,9 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
             usuarioLogueado={usuarioLogueado}
           />
           <span className="text-xs text-gray-400 flex items-center gap-1">
-            ↓ {archivo.descargas}
+            <span aria-hidden="true">↓</span>
+            <span className="sr-only">Descargas: </span>
+            {archivo.descargas}
           </span>
         </div>
 
@@ -164,9 +166,9 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
               onClick={handleEliminarMod}
               disabled={eliminandoMod}
               className="text-xs px-2 py-1.5 border border-red-200 rounded-lg text-red-400 hover:text-red-600 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Eliminar como moderador"
+              aria-label={eliminandoMod ? 'Eliminando...' : 'Eliminar como moderador'}
             >
-              {eliminandoMod ? '...' : '🗑'}
+              <span aria-hidden="true">{eliminandoMod ? '...' : '🗑'}</span>
             </button>
           )}
           {usuarioId && (
@@ -174,8 +176,10 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
               onClick={handleReportar}
               disabled={reportando}
               className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={reportando ? 'Procesando...' : reportado ? 'Quitar reporte de este archivo' : 'Reportar este archivo'}
+              aria-pressed={reportado}
             >
-              {reportando ? '...' : reportado ? '⚑ Quitar reporte' : '⚑'}
+              <span aria-hidden="true">{reportando ? '...' : reportado ? '⚑ Quitar reporte' : '⚑'}</span>
             </button>
           )}
           <a

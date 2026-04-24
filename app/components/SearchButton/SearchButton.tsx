@@ -29,7 +29,6 @@ export default function SearchButton() {
     const fetchTotalArchivos = async () => {
       const res = await supabase.from("archivos").select("id")
       const data = res.data
-      console.log("Total archivos:",data?.length)
       setTotalArchivos(data?.length)
     }
 

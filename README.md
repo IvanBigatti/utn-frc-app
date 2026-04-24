@@ -103,6 +103,49 @@ utn-frc-app/
 
 ---
 
+## Seguridad
+
+### Protección de rutas (`proxy.ts`)
+Las rutas `/foro`, `/perfil`, `/progreso`, `/resultados`, `/upload` y `/armadorHorarios` requieren sesión activa. El archivo `proxy.ts` (equivalente al middleware en Next.js 16) verifica la sesión en cada request **antes** de renderizar la página. Sin sesión, redirige a `/login`.
+
+### Headers HTTP de seguridad (`next.config.ts`)
+Todas las respuestas incluyen:
+
+| Header | Valor | Qué previene |
+|---|---|---|
+| `X-Frame-Options` | `DENY` | Clickjacking |
+| `X-Content-Type-Options` | `nosniff` | MIME sniffing |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Filtrado de referrer |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Acceso a hardware no solicitado |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | Fuerza HTTPS por 1 año |
+| `Content-Security-Policy` | Lista blanca de orígenes permitidos | XSS, inyección de recursos externos |
+| `X-Permitted-Cross-Domain-Policies` | `none` | Políticas cross-domain de Flash/PDF |
+
+### Seguridad en la subida de archivos
+1. **Autenticación verificada server-side** antes de procesar cualquier archivo.
+2. **Validación de tipo MIME** — solo PDF, JPG y PNG.
+3. **Límite de tamaño** — máximo 20 MB.
+4. **Validación de IDs numéricos** — `materia_id` e `ingenieria_id` se validan como enteros antes de usarse.
+5. **Escaneo con VirusTotal** — cada archivo se analiza antes de subirse a Drive. Si es detectado como malicioso o sospechoso, el upload es rechazado.
+6. **Sanitización del nombre** — se reemplaza todo carácter no alfanumérico por `_`.
+7. **Errores internos no expuestos** — el cliente solo recibe mensajes genéricos; los detalles se loguean server-side.
+
+### Privacidad de posts anónimos
+La vista `foro_post_summary` devuelve `NULL` en `auth_user_id` para posts marcados como anónimos — no es posible obtener el UUID del autor desde el cliente. Además, la función `get_user_emails` solo resuelve emails de usuarios que tienen al menos un post o comentario no anónimo, por lo que incluso con un UUID conocido no se puede obtener el email de un autor anónimo.
+
+### Autorización en operaciones de escritura
+- **Borrado propio**: las queries de DELETE incluyen `.eq("auth_user_id", userId)` además del ID del recurso, como defensa en profundidad.
+- **Borrado por moderador**: verificado server-side contra la tabla `moderadores`.
+- **RLS en Supabase**: las políticas de Row Level Security en la base de datos son la barrera final — incluso si alguien llama a la API de Supabase directamente con su JWT, las reglas de la DB aplican.
+
+### Secretos y variables de entorno
+Las credenciales privadas (`GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `VIRUSTOTAL_API_KEY`) solo existen en el servidor:
+- `googleDrive.ts` tiene `import 'server-only'` — Next.js rompe el build si se intenta importar desde un componente de cliente.
+- Las API Routes nunca están incluidas en el bundle del navegador.
+- Verificado: 0 ocurrencias de estas variables en `.next/static/` (bundle del cliente).
+
+---
+
 ## Conceptos clave para explicar en una entrevista
 
 ### ¿Qué es un Server Component vs Client Component?

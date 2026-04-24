@@ -221,14 +221,15 @@ const horasRestantes = totalHoras - horasAprobadas;
 
         {/* Selector de carrera */}
         <div className="progreso-filtro">
-          <label>Carrera</label>
-          <div className="progreso-tag-list">
+          <p id="carrera-label" className="progreso-filtro-label" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', margin: 0 }}>Carrera</p>
+          <div className="progreso-tag-list" role="group" aria-labelledby="carrera-label">
             {ingenierias.map(ing => (
               <button key={ing.id}
                 className={`progreso-tag-block ${carreraId === ing.id ? "active" : ""}`}
+                aria-pressed={carreraId === ing.id}
                 onClick={() => setCarreraId(carreraId === ing.id ? null : ing.id)}>
                 {ing.nombre}
-                {carreraId === ing.id && <span>✓</span>}
+                {carreraId === ing.id && <span aria-hidden="true">✓</span>}
               </button>
             ))}
           </div>
@@ -236,13 +237,13 @@ const horasRestantes = totalHoras - horasAprobadas;
 
         {/* Lista de materias por año */}
         {loading ? (
-          <p className="progreso-loading">Cargando materias...</p>
+          <p className="progreso-loading" role="status">Cargando materias...</p>
         ) : carreraId && (
           <div className="progreso-materias">
             {aniosOrdenados.map((anio, idx) => (
               <div key={anio}>
                 {idx > 0 && <div className="progreso-divisor" />}
-                <p className="progreso-anio">{anio}° Año</p>
+                <h3 className="progreso-anio">{anio}° Año</h3>
                 <div className="progreso-materia-list">
                   {materiasPorAnio.get(anio)!.map(mat => {
                     const rendida = progreso.has(mat.id);
@@ -253,9 +254,12 @@ const horasRestantes = totalHoras - horasAprobadas;
                           <button
                             className={`progreso-check ${rendida ? "checked" : ""}`}
                             onClick={() => toggleMateria(mat)}
-                            disabled={saving === mat.id}>
+                            disabled={saving === mat.id}
+                            role="checkbox"
+                            aria-checked={rendida}
+                            aria-label={`Marcar ${mat.nombre} como rendida`}>
                             {rendida && (
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             )}
@@ -270,6 +274,8 @@ const horasRestantes = totalHoras - horasAprobadas;
                               {[6, 7, 8, 9, 10].map(n => (
                                 <button key={n}
                                   className={`progreso-nota-btn ${nota === n ? "active" : ""}`}
+                                  aria-pressed={nota === n}
+                                  aria-label={`Nota ${n} para ${mat.nombre}`}
                                   onClick={() => guardarNota(mat.id, n)}>
                                   {n}
                                 </button>
