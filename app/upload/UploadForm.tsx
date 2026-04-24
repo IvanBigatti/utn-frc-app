@@ -99,72 +99,83 @@ export default function UploadForm() {
   return (
     <form onSubmit={handleSubmit} className="upload-form">
 
+      {/* Status announcements for screen readers */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {uploading ? 'Subiendo archivo, aguardá...' : ''}
+        {error || ''}
+      </div>
+
       {/* Carrera */}
-      <div className="upload-field">
-        <label>Carrera</label>
+      <fieldset className="upload-field" style={{ border: 'none', padding: 0, margin: 0 }}>
+        <legend className="upload-field" style={{ padding: 0, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000' }}>Carrera</legend>
         <div className="tag-group">
           {ingenierias.map(i => (
             <button key={i.id} type="button"
               className={`upload-tag ${carreraId === i.id ? 'active' : ''}`}
+              aria-pressed={carreraId === i.id}
               onClick={() => { setCarreraId(carreraId === i.id ? null : i.id); setAnio(null); setMateriaId(null) }}>
               {i.nombre}
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Año */}
       {carreraId && (
-        <div className="upload-field">
-          <label>Año</label>
+        <fieldset className="upload-field" style={{ border: 'none', padding: 0, margin: 0 }}>
+          <legend style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000', marginBottom: '14px' }}>Año</legend>
           <div className="tag-group">
             {[1,2,3,4,5].map(a => (
               <button key={a} type="button"
                 className={`upload-tag ${anio === a ? 'active' : ''}`}
+                aria-pressed={anio === a}
                 onClick={() => { setAnio(anio === a ? null : a); setMateriaId(null) }}>
                 {a}° Año
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
       )}
 
       {/* Materia */}
       {carreraId && anio && (
-        <div className="upload-field">
-          <label>Materia</label>
-          {loadingMaterias ? <p className="upload-loading">Cargando materias...</p> : (
+        <fieldset className="upload-field" style={{ border: 'none', padding: 0, margin: 0 }}>
+          <legend style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000', marginBottom: '14px' }}>Materia</legend>
+          {loadingMaterias ? <p className="upload-loading" role="status">Cargando materias...</p> : (
             <div className="tag-group">
               {materias.map(m => (
                 <button key={m.id} type="button"
                   className={`upload-tag ${materiaId === m.id ? 'active' : ''}`}
+                  aria-pressed={materiaId === m.id}
                   onClick={() => setMateriaId(materiaId === m.id ? null : m.id)}>
                   {m.nombre}
                 </button>
               ))}
             </div>
           )}
-        </div>
+        </fieldset>
       )}
 
       {/* Tipo */}
-      <div className="upload-field">
-        <label>Tipo de material</label>
+      <fieldset className="upload-field" style={{ border: 'none', padding: 0, margin: 0 }}>
+        <legend style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000', marginBottom: '14px' }}>Tipo de material</legend>
         <div className="tag-group">
           {TIPOS.map(t => (
             <button key={t.value} type="button"
               className={`upload-tag ${tipo === t.value ? 'active' : ''}`}
+              aria-pressed={tipo === t.value}
               onClick={() => setTipo(t.value)}>
               {t.label}
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Nombre */}
       <div className="upload-field">
-        <label>Nombre del archivo</label>
+        <label htmlFor="upload-nombre">Nombre del archivo</label>
         <input
+          id="upload-nombre"
           type="text"
           value={nombre}
           onChange={e => setNombre(e.target.value)}
@@ -176,8 +187,9 @@ export default function UploadForm() {
 
       {/* Descripción */}
       <div className="upload-field">
-        <label>Descripción <span className="upload-optional">(opcional)</span></label>
+        <label htmlFor="upload-descripcion">Descripción <span className="upload-optional">(opcional)</span></label>
         <textarea
+          id="upload-descripcion"
           value={descripcion}
           onChange={e => setDescripcion(e.target.value)}
           placeholder="Ej: Incluye resolución, temas: integrales, series..."
@@ -188,9 +200,10 @@ export default function UploadForm() {
 
       {/* Archivo */}
       <div className="upload-field">
-        <label>Archivo</label>
-        <label className="upload-dropzone">
+        <label htmlFor="upload-file">Archivo</label>
+        <label className="upload-dropzone" htmlFor="upload-file">
           <input
+            id="upload-file"
             type="file"
             accept=".pdf,.jpg,.jpeg,.png"
             onChange={e => setFile(e.target.files?.[0] ?? null)}
@@ -198,7 +211,7 @@ export default function UploadForm() {
             required
           />
           <div className="upload-dropzone__content">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
@@ -215,7 +228,14 @@ export default function UploadForm() {
       {/* Progress */}
       {uploading && (
         <div className="upload-progress-wrapper">
-          <div className="upload-progress">
+          <div
+            className="upload-progress"
+            role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progreso de subida"
+          >
             <div className="upload-progress__bar" style={{ width: `${progress}%` }} />
           </div>
           <p className="upload-scanning-notice">
@@ -224,7 +244,7 @@ export default function UploadForm() {
         </div>
       )}
 
-      {error && <p className="upload-error">{error}</p>}
+      {error && <p className="upload-error" role="alert">{error}</p>}
 
       <button
         type="submit"

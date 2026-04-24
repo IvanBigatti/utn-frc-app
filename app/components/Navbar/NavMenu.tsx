@@ -55,7 +55,8 @@ export default function NavMenu({ email, avatarKey }: Props) {
           onClick={() => setOpen(o => !o)}
           className="inline-flex items-center justify-center p-2 w-9 h-9 text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
           aria-expanded={open}
-          aria-label="Abrir menú"
+          aria-controls="navbar-menu"
+          aria-label={open ? "Cerrar menú" : "Abrir menú"}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke="currentColor" strokeLinecap="round" strokeWidth="2" d="M5 7h14M5 12h14M5 17h14" />

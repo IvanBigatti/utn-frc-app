@@ -99,7 +99,6 @@ export default function HorariosPage() {
   useEffect(() => {
     supabase.from("ingenieria").select("id, nombre").order("nombre")
       .then(({ data, error }) => {
-        console.log("[ingenierias] data:", data, "error:", error);
         if (data) setIngenierias(data);
       });
   }, []);

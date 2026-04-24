@@ -26,6 +26,90 @@ body {
   background-color: #ffffff;
 }
 
+/* ── Skip navigation ─────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  z-index: 9999;
+  border-bottom-right-radius: 6px;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Global focus ring ───────────────────────────── */
+/* Applied only when navigating by keyboard, not mouse */
+:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Screen-reader-only utility ──────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Windows High Contrast (forced-colors) ───────── */
+@media (forced-colors: active) {
+  /* Restore visible outlines that custom styles might suppress */
+  :focus-visible {
+    outline: 3px solid ButtonText;
+    outline-offset: 2px;
+  }
+  /* Let the OS recolor custom backgrounds/borders on interactive elements */
+  button,
+  [role="button"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="radiogroup"],
+  a {
+    forced-color-adjust: auto;
+  }
+  /* Progress bars need a visible border in high-contrast */
+  [role="progressbar"] {
+    border: 1px solid ButtonText;
+  }
+}
+
+/* ── High-contrast preference (macOS Increase Contrast) */
+@media (prefers-contrast: high) {
+  /* Strengthen muted text that would otherwise fail 4.5:1 */
+  .upload-optional,
+  .login-divider__text,
+  .progreso-sub,
+  .sp-card__label,
+  .sp-card__sub,
+  .perfil-email,
+  .perfil-metric-card__label,
+  .foro-post-card__preview,
+  .upload-scanning-notice {
+    color: #555 !important;
+  }
+  /* Strengthen border-only buttons so they're clearly visible */
+  button {
+    border-width: 2px;
+  }
+}
+
 .mod-badge {
   display: inline-block;
   font-size: 10px;

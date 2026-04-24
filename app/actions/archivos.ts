@@ -16,7 +16,7 @@ export async function puntuarArchivo(archivoId: number, puntos: number) {
       { onConflict: 'archivo_id,usuario_id' }
     )
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'Error al guardar la puntuación' }
   return { ok: true }
 }
 

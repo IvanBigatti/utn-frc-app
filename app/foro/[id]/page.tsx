@@ -214,7 +214,7 @@ export default function PostDetailPage() {
   const handleCommentDelete = async (commentId: number) => {
     const confirmar = window.confirm("¿Eliminar este comentario?");
     if (!confirmar) return;
-    await supabase.from("foro_comment").delete().eq("id", commentId);
+    await supabase.from("foro_comment").delete().eq("id", commentId).eq("auth_user_id", userId);
     setComments((prev) => prev.filter((c) => c.id !== commentId));
     setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
   };
@@ -296,20 +296,22 @@ export default function PostDetailPage() {
               className={`foro-vote__btn foro-vote__btn--up ${userVote === 1 ? "active" : ""}`}
               onClick={() => handleVote(1)}
               disabled={!userId}
-              title={userId ? "Upvote" : "Iniciá sesión para votar"}
+              aria-label={userId ? `Votar positivo (puntaje actual: ${post.vote_score})` : "Iniciá sesión para votar"}
+              aria-pressed={userVote === 1}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 8H4z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4l8 8H4z"/></svg>
             </button>
-            <span className={`foro-vote__score ${post.vote_score > 0 ? "foro-vote__score--positive" : post.vote_score < 0 ? "foro-vote__score--negative" : ""}`}>
+            <span className={`foro-vote__score ${post.vote_score > 0 ? "foro-vote__score--positive" : post.vote_score < 0 ? "foro-vote__score--negative" : ""}`} aria-live="polite" aria-atomic="true">
               {post.vote_score}
             </span>
             <button
               className={`foro-vote__btn foro-vote__btn--down ${userVote === -1 ? "active" : ""}`}
               onClick={() => handleVote(-1)}
               disabled={!userId}
-              title={userId ? "Downvote" : "Iniciá sesión para votar"}
+              aria-label={userId ? `Votar negativo (puntaje actual: ${post.vote_score})` : "Iniciá sesión para votar"}
+              aria-pressed={userVote === -1}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l-8-8h16z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20l-8-8h16z"/></svg>
             </button>
           </div>
 
@@ -365,7 +367,7 @@ export default function PostDetailPage() {
                   onClick={async () => {
                     const ok = window.confirm("¿Eliminar esta publicación?");
                     if (!ok) return;
-                    await supabase.from("foro_post").delete().eq("id", post.id);
+                    await supabase.from("foro_post").delete().eq("id", post.id).eq("auth_user_id", userId);
                     router.push("/foro");
                   }}
                 >

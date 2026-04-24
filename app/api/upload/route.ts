@@ -91,8 +91,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 })
     }
 
-    if (!materiaId) {
+    if (!materiaId || isNaN(parseInt(materiaId, 10))) {
       return NextResponse.json({ error: 'La materia es requerida' }, { status: 400 })
+    }
+
+    if (ingenieriaId && isNaN(parseInt(ingenieriaId, 10))) {
+      return NextResponse.json({ error: 'Ingeniería inválida' }, { status: 400 })
     }
 
     if (file.size > MAX_SIZE_BYTES) {
@@ -135,16 +139,17 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[upload] Supabase insert error:', error)
+      return NextResponse.json({ error: 'Error al guardar el archivo' }, { status: 500 })
     }
 
     return NextResponse.json({ archivo: data })
 
   } catch (err: any) {
-    console.error(err)
+    console.error('[upload] Unexpected error:', err)
 
     return NextResponse.json(
-      { error: err.message || 'Error interno del servidor' },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     )
   }
