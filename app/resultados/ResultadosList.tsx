@@ -15,6 +15,7 @@ type Archivo = {
   rating_promedio: number
   total_votos: number
   materia_nombre: string
+  auth_user_id: string
 }
 
 type Props = {

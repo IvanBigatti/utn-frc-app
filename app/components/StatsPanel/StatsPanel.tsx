@@ -170,10 +170,11 @@ export default async function StatsPanel() {
     progreso.filter(p => p.ingenieria_id === mainCarreraId).map(p => p.materia_id)
   );
 
-  const { data: comisiones } = await supabase
+  const { data: comisionesRaw } = await supabase
     .from("comision")
     .select("id, año")
     .eq("ingenieria_id", mainCarreraId);
+  const comisiones = comisionesRaw as unknown as { id: number; año: number }[] | null;
 
   if (comisiones?.length) {
     const comisionAnioMap = new Map<number, number>(
