@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-25T00:00:00Z",
+  "title": "Design System: TUTN",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Azul Pizarrón",
+        "canonical": "oklch(33% 0.12 264)",
+        "tonalRamp": ["#080f2e", "#101c50", "#172966", "#1f387e", "#3354a8", "#5e7fca", "#99b0e0", "#dce5f7"]
+      },
+      "accent-teal": {
+        "role": "secondary",
+        "displayName": "Birome Turquesa",
+        "canonical": "oklch(88% 0.04 190)",
+        "tonalRamp": ["#1a3535", "#264e4c", "#396e6b", "#56938f", "#7ab8b5", "#a5d5d3", "#c5e5e4", "#e8f5f5"]
+      },
+      "surface-paper": {
+        "role": "neutral",
+        "displayName": "Papel Cuadriculado",
+        "canonical": "oklch(97.5% 0.005 200)",
+        "tonalRamp": ["#2a2a28", "#3d3d3b", "#6e6e6c", "#9e9e9c", "#c4c4c2", "#e3e3e1", "#f2f2f0", "#fafaf8"]
+      },
+      "surface-white": {
+        "role": "neutral",
+        "displayName": "Blanco Limpio",
+        "canonical": "oklch(99% 0.002 264)",
+        "tonalRamp": ["#1a1a1a", "#2e2e2e", "#4a4a4a", "#707070", "#9c9c9c", "#c8c8c8", "#e8e8e8", "#ffffff"]
+      },
+      "border-default": {
+        "role": "neutral",
+        "displayName": "Línea de Carpeta",
+        "canonical": "oklch(91% 0.005 120)",
+        "tonalRamp": ["#2c2c28", "#4a4a46", "#6e6e6a", "#959590", "#b8b8b4", "#d2d2ce", "#e8e8e4", "#f4f4f0"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Tinta Oscura",
+        "canonical": "oklch(18% 0.008 264)",
+        "tonalRamp": ["#070a11", "#0c1019", "#111827", "#1f2d42", "#374151", "#6b7280", "#9ca3af", "#e5e7eb"]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Rojo Parcial",
+        "canonical": "oklch(55% 0.18 22)",
+        "tonalRamp": ["#3b0a0a", "#5c1212", "#881a1a", "#b52626", "#e05555", "#ee8080", "#f8bfbf", "#fde8e8"]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Verde Aprobado",
+        "canonical": "oklch(58% 0.12 145)",
+        "tonalRamp": ["#0d2116", "#143220", "#235c38", "#357a4f", "#5a9e6f", "#82be92", "#b3d9be", "#e0f2e6"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Brand logotype on the landing page. One use in the entire product." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles, section headers, profile usernames." },
+      "title": { "displayName": "Title", "purpose": "Card headings, post titles, list entry points." },
+      "body": { "displayName": "Body", "purpose": "All prose content. Max 65–75ch line length." },
+      "label": { "displayName": "Label", "purpose": "Form eyebrows, stat captions, section labels. Always uppercase + wide-tracked." }
+    },
+    "shadows": [
+      {
+        "name": "ambient-modal",
+        "value": "0 24px 60px rgba(0, 0, 0, 0.18)",
+        "purpose": "Exclusive to modal dialogs (SearchModal, FiltroPanel). Never on cards, inputs, or nav elements."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Default easing for state transitions. Exponential ease-out — no bounce, no elastic."
+      },
+      {
+        "name": "ease-micro",
+        "value": "0.15s ease",
+        "purpose": "Micro-interactions: button hover, border color shifts, color transitions."
+      },
+      {
+        "name": "ease-enter",
+        "value": "0.2s cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Component enter transitions (modal open, panel slide-in)."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "480px", "purpose": "Small mobile — avatar grid wraps, compact padding." },
+      { "name": "md", "value": "768px", "purpose": "Primary mobile/desktop breakpoint — navbar collapses, landing grid stacks." },
+      { "name": "lg", "value": "1024px", "purpose": "Wide layout — progreso sidebar becomes sticky." },
+      { "name": "xl", "value": "1280px", "purpose": "Max content width for navbar and page containers." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Pill-shaped primary action. Used for publish (foro), login, and submit actions.",
+      "html": "<button class=\"ds-btn-primary\">+ Publicar</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; background: #1f387e; color: #ffffff; border: none; border-radius: 9999px; font-size: 14px; font-weight: 700; font-family: Inter, Arial, Helvetica, sans-serif; cursor: pointer; transition: background 0.15s; } .ds-btn-primary:hover { background: #162d4a; } .ds-btn-primary:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 9999px; } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary surface action. Used for Foro and Armador de Horarios landing links.",
+      "html": "<a class=\"ds-btn-ghost\" href=\"/foro\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/></svg>Foro</a>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; background: #ffffff; color: #1f387e; border: 1.5px solid #d0d9f0; border-radius: 12px; font-size: 14px; font-weight: 600; font-family: Inter, Arial, Helvetica, sans-serif; cursor: pointer; text-decoration: none; transition: background 0.18s, border-color 0.18s; width: 100%; max-width: 280px; box-sizing: border-box; } .ds-btn-ghost:hover { background: #f0f4ff; border-color: #7b93d8; } .ds-btn-ghost:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 12px; }"
+    },
+    {
+      "name": "Filter Tag — Active",
+      "kind": "chip",
+      "refersTo": "tag-active",
+      "description": "Selected state of cascade-navigation pills (Carrera, Año, Materia, post type filters).",
+      "html": "<button class=\"ds-tag ds-tag--active\" aria-pressed=\"true\">Sistemas</button>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; padding: 9px 22px; border-radius: 9999px; font-size: 13.5px; font-weight: 600; font-family: Inter, Arial, Helvetica, sans-serif; cursor: pointer; transition: background 0.2s, border-color 0.2s; white-space: nowrap; } .ds-tag--active { background: #1f387e; color: #ffffff; border: 1.5px solid #1f387e; } .ds-tag--active:hover { background: #162d4a; border-color: #162d4a; } .ds-tag--inactive { background: #fafaf8; color: #1f387e; border: 1.5px solid #e8e8e4; } .ds-tag--inactive:hover { border-color: #a0b0d8; } .ds-tag:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 9999px; }"
+    },
+    {
+      "name": "Filter Tag — Inactive",
+      "kind": "chip",
+      "refersTo": "tag-inactive",
+      "description": "Unselected state of cascade-navigation pills.",
+      "html": "<button class=\"ds-tag ds-tag--inactive\" aria-pressed=\"false\">Civil</button>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; padding: 9px 22px; border-radius: 9999px; font-size: 13.5px; font-weight: 600; font-family: Inter, Arial, Helvetica, sans-serif; cursor: pointer; transition: background 0.2s, border-color 0.2s; white-space: nowrap; } .ds-tag--inactive { background: #fafaf8; color: #1f387e; border: 1.5px solid #e8e8e4; } .ds-tag--inactive:hover { border-color: #a0b0d8; background: #f5f7fd; } .ds-tag:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 9999px; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Standard labeled text input for upload forms and foro post creation.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field__label\" for=\"ds-ex-1\">Nombre del archivo</label><input class=\"ds-input\" id=\"ds-ex-1\" type=\"text\" placeholder=\"Ej: Resumen Análisis II parcial 1\" /></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; } .ds-field__label { font-size: 11px; font-weight: 700; font-family: Inter, Arial, Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: #374151; } .ds-input { border: 1.5px solid #e8e8e4; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 400; font-family: Inter, Arial, Helvetica, sans-serif; color: #111827; background: #ffffff; outline: none; transition: border-color 0.2s; width: 100%; box-sizing: border-box; } .ds-input::placeholder { color: #9ca3af; } .ds-input:focus { border-color: #1f387e; } .ds-input:disabled { opacity: 0.6; background: #fafaf8; cursor: not-allowed; }"
+    },
+    {
+      "name": "Navbar",
+      "kind": "nav",
+      "refersTo": "button-primary",
+      "description": "Fixed 56px top navigation with brand logotype, page links, and auth controls.",
+      "html": "<nav class=\"ds-navbar\" role=\"navigation\" aria-label=\"Navegación principal\"><a class=\"ds-navbar__brand\" href=\"/\">TUTN</a><ul class=\"ds-navbar__links\" role=\"list\"><li><a class=\"ds-navbar__link\" href=\"/foro\">Foro</a></li><li><a class=\"ds-navbar__link ds-navbar__link--active\" href=\"/upload\">Subir material</a></li><li><a class=\"ds-navbar__link\" href=\"/progreso\">Progreso</a></li></ul><button class=\"ds-btn-primary\" style=\"font-size:13px;padding:6px 16px;\">Iniciá sesión</button></nav>",
+      "css": ".ds-navbar { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; background: #ffffff; border-bottom: 1px solid #e8e8e4; font-family: Inter, Arial, Helvetica, sans-serif; gap: 16px; } .ds-navbar__brand { font-size: 20px; font-weight: 800; color: #111827; text-decoration: none; letter-spacing: -0.03em; flex-shrink: 0; } .ds-navbar__links { display: flex; gap: 32px; list-style: none; margin: 0; padding: 0; } .ds-navbar__link { font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: color 0.15s; } .ds-navbar__link:hover { color: #1f387e; } .ds-navbar__link--active { color: #1f387e; } .ds-navbar__link:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 4px; }"
+    },
+    {
+      "name": "Vote Control",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "Foro voting interface: upvote/downvote buttons flanking a live score. Signature component.",
+      "html": "<div class=\"ds-vote\" role=\"group\" aria-label=\"Votos\"><button class=\"ds-vote__btn ds-vote__btn--up\" aria-pressed=\"true\" aria-label=\"Votar positivo (puntaje actual: 12)\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M12 4l8 8H4z\"/></svg></button><span class=\"ds-vote__score ds-vote__score--positive\" aria-live=\"polite\" aria-atomic=\"true\">12</span><button class=\"ds-vote__btn ds-vote__btn--down\" aria-pressed=\"false\" aria-label=\"Votar negativo (puntaje actual: 12)\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M12 20l-8-8h16z\"/></svg></button></div>",
+      "css": ".ds-vote { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 32px; } .ds-vote__btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: transparent; border: none; color: #878a8c; cursor: pointer; border-radius: 4px; transition: color 0.15s, background 0.15s; } .ds-vote__btn:hover { background: #f0f0ee; color: #374151; } .ds-vote__btn--up[aria-pressed='true'] { color: #1f387e; } .ds-vote__btn--down[aria-pressed='true'] { color: #e05555; } .ds-vote__btn:disabled { opacity: 0.4; cursor: not-allowed; } .ds-vote__btn:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; } .ds-vote__score { font-size: 13px; font-weight: 700; font-family: Inter, Arial, Helvetica, sans-serif; color: #878a8c; line-height: 1; min-width: 16px; text-align: center; } .ds-vote__score--positive { color: #1f387e; } .ds-vote__score--negative { color: #e05555; }"
+    },
+    {
+      "name": "File Result Card",
+      "kind": "card",
+      "refersTo": "button-primary",
+      "description": "Material search result: shows file type badge, name, star rating, download count, and action buttons.",
+      "html": "<div class=\"ds-file-card\"><div class=\"ds-file-card__head\"><span class=\"ds-file-card__badge ds-file-card__badge--resumen\">Resumen</span><span class=\"ds-file-card__date\">15 mar 2026</span></div><h3 class=\"ds-file-card__name\">Resumen Análisis II — Parcial 1</h3><p class=\"ds-file-card__desc\">Completo, con ejercicios resueltos de la práctica 3 y 4.</p><div class=\"ds-file-card__footer\"><span class=\"ds-file-card__dl\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg><span class=\"sr-only\">Descargas: </span>47</span><div class=\"ds-file-card__actions\"><a class=\"ds-file-card__action\" href=\"#\">Ver</a><button class=\"ds-btn-primary\" style=\"font-size:12px;padding:6px 12px;\">Descargar</button></div></div></div>",
+      "css": ".ds-file-card { background: #ffffff; border: 1px solid #e8e8e4; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px; font-family: Inter, Arial, Helvetica, sans-serif; } .ds-file-card__head { display: flex; align-items: center; gap: 8px; } .ds-file-card__badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; } .ds-file-card__badge--resumen { background: #dbeafe; color: #1d4ed8; } .ds-file-card__badge--parcial { background: #ffedd5; color: #c2410c; } .ds-file-card__badge--tp { background: #dcfce7; color: #15803d; } .ds-file-card__date { font-size: 12px; color: #9ca3af; } .ds-file-card__name { font-size: 14px; font-weight: 600; color: #111827; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-file-card__desc { font-size: 12px; color: #6b7280; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .ds-file-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; } .ds-file-card__dl { font-size: 12px; color: #9ca3af; display: flex; align-items: center; gap: 4px; } .ds-file-card__actions { display: flex; align-items: center; gap: 8px; } .ds-file-card__action { font-size: 12px; padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 8px; color: #374151; text-decoration: none; transition: background 0.15s; } .ds-file-card__action:hover { background: #f9fafb; } .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Guía Definitiva de la Facultad",
+    "overview": "TUTN is built on the metaphor of the definitive handbook: the well-indexed, dog-eared guide that students pass between themselves because it actually has the answers. Not the official syllabus nobody reads, not a consumer app dressed up in a university logo. A reliable reference that respects the user's time and intelligence.\n\nThe interface is information-first. Density is a virtue when it means less clicking, not more clutter. Every element either helps a student find something or gets out of the way. The palette is restrained: one deep blue anchors trust, everything else is paper and ink. Decoration earns its place by serving function.\n\nThe voice is Argentine: direct, informal, voseo throughout. The app speaks like the student next to you who actually knows the campus, not like an institution trying to sound approachable.",
+    "keyCharacteristics": [
+      "Azul Pizarrón is the single trust anchor; everything else is near-neutral",
+      "Paper-toned backgrounds reduce eye strain during long study sessions",
+      "Flat elevation: borders divide space, shadows are reserved for modal overlays",
+      "Pill-shaped tags for multi-select cascades; radius shrinks as components grow in visual weight",
+      "Dense but breathable layout — rhythm through varied spacing, not uniform padding"
+    ],
+    "rules": [
+      { "name": "La Regla del Único Acento", "body": "Azul Pizarrón is the only color that appears statically on more than 10% of any surface. Birome Turquesa lives only in motion. If you're adding a second static accent, you're adding noise to a system built on restraint.", "section": "colors" },
+      { "name": "La Regla del Papel", "body": "Backgrounds are warm off-whites, never pure #ffffff at the page level. Pure white is reserved for elevated surfaces. The contrast between Papel Cuadriculado and Blanco Limpio creates tonal depth without shadows.", "section": "colors" },
+      { "name": "La Regla del Pizarrón", "body": "Labels and eyebrows are always uppercase with wide tracking (0.07–0.1em). This is the one place all-caps is permitted. Body text, headings, and buttons are never all-caps.", "section": "typography" },
+      { "name": "La Regla de la Línea", "body": "Prose content is capped at 65–75 characters per line. The container constrains itself on wide screens; the line never stretches full-width.", "section": "typography" },
+      { "name": "La Regla Plana", "body": "If a surface is not a modal, it does not get a shadow. Tonal color shifts handle depth at page level. Borders handle depth at component level.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Azul Pizarrón as the single accent. Its rarity on a given surface is what makes it trustworthy.",
+      "Do use pill-shaped buttons (border-radius: 9999px) for primary in-page actions only.",
+      "Do write labels, form eyebrows, and stat captions in uppercase with wide tracking (0.07–0.1em). This is the only permitted use of all-caps.",
+      "Do differentiate surface depth with color tones, not shadows.",
+      "Do write in voseo: Iniciá sesión, Buscás, Subí material, Elegí tu avatar. The interface is Argentine, always.",
+      "Do keep body text under 70ch per line.",
+      "Do use border: 1px solid #e8e8e4 as the primary spatial separator.",
+      "Do animate only transform, opacity, and color. Never animate width, height, top, left, or padding.",
+      "Do include aria-live + aria-atomic on any value that updates without user action."
+    ],
+    "donts": [
+      "Don't use gradients on hero sections, button backgrounds, or cards. This is the most visible tell of the anti-reference: estética SaaS genérica de Silicon Valley.",
+      "Don't build 2×2 grids of identical cards with big numbers and uppercase labels. This is the banned hero-metric template.",
+      "Don't add a second static saturated accent color. Birome Turquesa is for motion only.",
+      "Don't add box-shadow to anything that is not a modal overlay.",
+      "Don't imitate Coursera, Moodle, or apps universitarias argentinas oficiales.",
+      "Don't use all-caps for buttons, headings, or body copy. Label role only.",
+      "Don't suppress the focus ring.",
+      "Don't use window.confirm() or alert() for user-facing feedback.",
+      "Don't apply the Display scale (800 weight, clamp 4–6rem) to anything other than the brand logotype."
+    ]
+  }
+}

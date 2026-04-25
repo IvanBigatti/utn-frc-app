@@ -140,6 +140,25 @@
 
 .sp-link:hover { opacity: 1; }
 
+@media (max-width: 768px) {
+  .stats-panel {
+    padding: 24px 16px;
+    border-left: none;
+    border-top: 1px solid #e8e8e4;
+  }
+}
+
+@media (max-width: 400px) {
+  .sp-grid,
+  .sp-charts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sp-card--full {
+    grid-column: auto;
+  }
+}
+
 /* ── Estado vacío ────────────────────────────────────── */
 .sp-empty {
   display: flex;

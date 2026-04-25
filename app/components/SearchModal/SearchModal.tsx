@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supaBaseClient.js";
 import "./SearchModal.css";
@@ -15,6 +15,9 @@ type Props = {
 
 export default function SearchModal({ isOpen, onClose }: Props) {
   const router = useRouter();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+
   const [ingenierias, setIngenierias] = useState<Ingenieria[]>([]);
   const [materias, setMaterias] = useState<Materia[]>([]);
 
@@ -76,13 +79,44 @@ export default function SearchModal({ isOpen, onClose }: Props) {
     fetchMaterias();
   }, [carreraId, anio]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setCarreraId(null);
     setMateriaId(null);
     setAnio(null);
     setMaterias([]);
     onClose();
-  };
+  }, [onClose]);
+
+  // Capture trigger element on open; return focus on close
+  useEffect(() => {
+    if (isOpen) {
+      triggerRef.current = document.activeElement;
+    } else if (triggerRef.current instanceof HTMLElement) {
+      triggerRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Focus trap
+  useEffect(() => {
+    if (!isOpen || !dialogRef.current) return;
+    const dialog = dialogRef.current;
+    const sel = 'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+    const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(sel));
+    if (focusable.length) focusable[0].focus();
+    const trap = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { handleClose(); return; }
+      if (e.key !== "Tab" || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    dialog.addEventListener("keydown", trap);
+    return () => dialog.removeEventListener("keydown", trap);
+  }, [isOpen, handleClose]);
 
   const handleBuscar = () => {
     if (!materiaId) return;
@@ -94,11 +128,17 @@ export default function SearchModal({ isOpen, onClose }: Props) {
 
   return (
     <>
-      <div className="overlay" onClick={handleClose} />
-      <div className="modal">
+      <div className="overlay" onClick={handleClose} aria-hidden="true" />
+      <div
+        ref={dialogRef}
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="search-modal-title"
+      >
         <div className="modal__header">
-          <h2>Buscar material</h2>
-          <button className="modal__close" onClick={handleClose}>✕</button>
+          <h2 id="search-modal-title">Buscar material</h2>
+          <button className="modal__close" onClick={handleClose} aria-label="Cerrar">✕</button>
         </div>
 
         <div className="modal__fields">

@@ -39,6 +39,12 @@ const TIPO_LABELS: Record<string, string> = {
   tp: 'TP',
 }
 
+const TrashIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+  </svg>
+)
+
 export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esModerador }: Props) {
   const [, startTransition] = useTransition()
   const [reportado, setReportado] = useState(false)
@@ -46,6 +52,13 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
   const [reportando, setReportando] = useState(false)
   const [eliminandoMod, setEliminandoMod] = useState(false)
   const [eliminandoPropio, setEliminandoPropio] = useState(false)
+  const [confirming, setConfirming] = useState<'reporte' | 'propio' | 'mod' | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const showError = (msg: string) => {
+    setErrorMsg(msg)
+    setTimeout(() => setErrorMsg(null), 4000)
+  }
 
   useEffect(() => {
     if (!usuarioId) return
@@ -73,47 +86,45 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
   const handleReportar = async () => {
     if (reportado) {
       setReportando(true)
-      const res = await fetch(`/api/report-archivo?archivoId=${archivo.id}`, {
-        method: 'DELETE',
-      })
+      const res = await fetch(`/api/report-archivo?archivoId=${archivo.id}`, { method: 'DELETE' })
       const data = await res.json()
       setReportando(false)
-      if (data.error) { alert(data.error); return }
+      if (data.error) { showError(data.error); return }
       setReportado(false)
       return
     }
-    if (!window.confirm('¿Querés reportar este archivo como contenido inapropiado?')) return
-    setReportando(true)
-    const res = await fetch('/api/report-archivo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ archivoId: archivo.id }),
-    })
-    const data = await res.json()
-    setReportando(false)
-    if (data.error) { alert(data.error); return }
-    if (data.deleted) { setEliminado(true); return }
-    setReportado(true)
+    setConfirming('reporte')
   }
 
-  const handleEliminarPropio = async () => {
-    if (!window.confirm('¿Eliminar este archivo? Esta acción no se puede deshacer.')) return
-    setEliminandoPropio(true)
-    const res = await fetch(`/api/delete-archivo?archivoId=${archivo.id}`, { method: 'DELETE' })
-    const data = await res.json()
-    setEliminandoPropio(false)
-    if (data.error) { alert(data.error); return }
-    setEliminado(true)
-  }
-
-  const handleEliminarMod = async () => {
-    if (!window.confirm('¿Eliminar este archivo como moderador?')) return
-    setEliminandoMod(true)
-    const res = await fetch(`/api/mod-archivo?archivoId=${archivo.id}`, { method: 'DELETE' })
-    const data = await res.json()
-    setEliminandoMod(false)
-    if (data.error) { alert(data.error); return }
-    setEliminado(true)
+  const handleConfirmar = async (tipo: 'reporte' | 'propio' | 'mod') => {
+    setConfirming(null)
+    if (tipo === 'reporte') {
+      setReportando(true)
+      const res = await fetch('/api/report-archivo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archivoId: archivo.id }),
+      })
+      const data = await res.json()
+      setReportando(false)
+      if (data.error) { showError(data.error); return }
+      if (data.deleted) { setEliminado(true); return }
+      setReportado(true)
+    } else if (tipo === 'propio') {
+      setEliminandoPropio(true)
+      const res = await fetch(`/api/delete-archivo?archivoId=${archivo.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      setEliminandoPropio(false)
+      if (data.error) { showError(data.error); return }
+      setEliminado(true)
+    } else {
+      setEliminandoMod(true)
+      const res = await fetch(`/api/mod-archivo?archivoId=${archivo.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      setEliminandoMod(false)
+      if (data.error) { showError(data.error); return }
+      setEliminado(true)
+    }
   }
 
   if (eliminado) return null
@@ -135,6 +146,10 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
         </div>
       </div>
 
+      {errorMsg && (
+        <p className="text-xs text-red-500" role="alert">{errorMsg}</p>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <StarRating
@@ -150,49 +165,72 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {usuarioId === archivo.auth_user_id && (
-            <button
-              onClick={handleEliminarPropio}
-              disabled={eliminandoPropio}
-              className="text-xs px-3 py-1.5 border border-red-200 rounded-lg text-red-500 hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Eliminar mi archivo"
-            >
-              {eliminandoPropio ? '...' : 'Eliminar'}
-            </button>
+            confirming === 'propio' ? (
+              <span className="flex items-center gap-1 text-xs text-red-600">
+                <span>¿Eliminar?</span>
+                <button onClick={() => handleConfirmar('propio')} className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sí</button>
+                <button onClick={() => setConfirming(null)} className="px-2 py-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors">No</button>
+              </span>
+            ) : (
+              <button
+                onClick={() => setConfirming('propio')}
+                disabled={eliminandoPropio}
+                className="text-xs px-3 py-2 border border-red-200 rounded-lg text-red-500 hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {eliminandoPropio ? '...' : 'Eliminar'}
+              </button>
+            )
           )}
           {esModerador && usuarioId !== archivo.auth_user_id && (
-            <button
-              onClick={handleEliminarMod}
-              disabled={eliminandoMod}
-              className="text-xs px-2 py-1.5 border border-red-200 rounded-lg text-red-400 hover:text-red-600 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={eliminandoMod ? 'Eliminando...' : 'Eliminar como moderador'}
-            >
-              <span aria-hidden="true">{eliminandoMod ? '...' : '🗑'}</span>
-            </button>
+            confirming === 'mod' ? (
+              <span className="flex items-center gap-1 text-xs text-red-600">
+                <span>¿Eliminar (mod)?</span>
+                <button onClick={() => handleConfirmar('mod')} className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sí</button>
+                <button onClick={() => setConfirming(null)} className="px-2 py-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors">No</button>
+              </span>
+            ) : (
+              <button
+                onClick={() => setConfirming('mod')}
+                disabled={eliminandoMod}
+                className="text-xs px-2 py-2 border border-red-200 rounded-lg text-red-400 hover:text-red-600 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={eliminandoMod ? 'Eliminando...' : 'Eliminar como moderador'}
+              >
+                {eliminandoMod ? '...' : <TrashIcon />}
+              </button>
+            )
           )}
           {usuarioId && (
-            <button
-              onClick={handleReportar}
-              disabled={reportando}
-              className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={reportando ? 'Procesando...' : reportado ? 'Quitar reporte de este archivo' : 'Reportar este archivo'}
-              aria-pressed={reportado}
-            >
-              <span aria-hidden="true">{reportando ? '...' : reportado ? '⚑ Quitar reporte' : '⚑'}</span>
-            </button>
+            confirming === 'reporte' ? (
+              <span className="flex items-center gap-1 text-xs text-gray-600">
+                <span>¿Reportar?</span>
+                <button onClick={() => handleConfirmar('reporte')} className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sí</button>
+                <button onClick={() => setConfirming(null)} className="px-2 py-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors">No</button>
+              </span>
+            ) : (
+              <button
+                onClick={handleReportar}
+                disabled={reportando}
+                className="text-xs px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={reportando ? 'Procesando...' : reportado ? 'Quitar reporte de este archivo' : 'Reportar este archivo'}
+                aria-pressed={reportado}
+              >
+                <span aria-hidden="true">{reportando ? '...' : reportado ? '⚑ Quitar reporte' : '⚑'}</span>
+              </button>
+            )
           )}
           <a
             href={getDriveViewUrl(archivo.drive_file_id)}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             Ver
           </a>
           <button
             onClick={handleDescargar}
-            className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="text-xs px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             Descargar
           </button>

@@ -195,6 +195,23 @@
   margin: 6px 0 0;
 }
 
+@media (max-width: 480px) {
+  .modal {
+    padding: 20px 16px;
+    max-height: 92vh;
+    border-radius: 16px;
+  }
+
+  .modal__header h2 {
+    font-size: 17px;
+  }
+
+  .animated-button {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+}
+
 
 
 
