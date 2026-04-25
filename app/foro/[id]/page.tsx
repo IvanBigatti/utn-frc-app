@@ -544,7 +544,7 @@ export default function PostDetailPage() {
                     Comentar de forma anónima
                   </label>
                   <button
-                    className="foro-new-comment__submit"
+                    className="btn-primary"
                     onClick={handleCommentSubmit}
                     disabled={submitting || !newComment.trim()}
                   >

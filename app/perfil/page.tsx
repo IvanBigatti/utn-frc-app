@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
 import { getAvatarSrc, type AvatarConfig, type UnlockConditionType } from "@/app/components/avatars";
 import "./perfil.css";
@@ -179,7 +180,7 @@ export default function PerfilPage() {
                 disabled={!unlocked}
               >
                 <div className="perfil-avatar-img-wrapper">
-                  <img src={av.src} alt={av.name} />
+                  <img src={av.src} alt={av.name} loading="lazy" />
                   {!unlocked && (
                     <div className="perfil-avatar-lock-overlay" aria-hidden="true">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -212,7 +213,12 @@ export default function PerfilPage() {
       <div className="perfil-section">
         <h2 className="perfil-section__title">Mis publicaciones en el foro</h2>
         {posts.length === 0 ? (
-          <div className="perfil-empty">Todavía no publicaste nada en el foro.</div>
+          <div className="perfil-empty">
+            <p style={{ margin: '0 0 12px' }}>Todavía no publicaste nada en el foro.</p>
+            <Link href="/foro" className="btn-primary" style={{ textDecoration: 'none', fontSize: '13px', padding: '7px 16px' }}>
+              Ir al foro
+            </Link>
+          </div>
         ) : (
           <div className="perfil-posts">
             {posts.map((post) => (

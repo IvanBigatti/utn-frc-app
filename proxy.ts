@@ -10,7 +10,7 @@ const PROTECTED_ROUTES = [
   '/armadorHorarios',
 ]
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

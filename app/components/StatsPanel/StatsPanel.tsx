@@ -54,7 +54,7 @@ function PorAnioCard({ anios }: { anios: AnioData[] }) {
             <div key={anio} className="sp-anio-row">
               <span className="sp-anio-label">{anio}°</span>
               <div className="sp-bar">
-                <div className="sp-bar__fill" style={{ width: `${pct}%` }} />
+                <div className="sp-bar__fill" style={{ transform: `scaleX(${pct / 100})` }} />
               </div>
               <span className="sp-anio-count">{completadas}/{total}</span>
             </div>

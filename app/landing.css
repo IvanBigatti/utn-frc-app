@@ -1,10 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 .landing-layout {
   display: grid;
   grid-template-columns: 55% 45%;
-  height: calc(100vh - 56px);
-  margin-top: 56px;
+  height: calc(100dvh - var(--navbar-height) - var(--safe-top, 0px));
   overflow: hidden;
 }
 

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./tokens.css";
 
 :root {
   --background: #ffffff;
@@ -8,8 +9,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,8 +22,25 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter, 'Inter', 'Arial', sans-serif);
   background-color: #ffffff;
+}
+
+/* ── Safe area / iOS notch ───────────────────────── */
+:root {
+  --navbar-height: 56px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Body offset: navbar height + iOS safe area top */
+.body-offset {
+  padding-top: calc(var(--navbar-height) + var(--safe-top));
+}
+
+/* Navbar: pushes content down into safe zone */
+.navbar {
+  padding-top: var(--safe-top);
 }
 
 /* ── Skip navigation ─────────────────────────────── */
@@ -47,7 +64,7 @@ body {
 /* ── Global focus ring ───────────────────────────── */
 /* Applied only when navigating by keyboard, not mouse */
 :focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -108,6 +125,148 @@ body {
   button {
     border-width: 2px;
   }
+}
+
+/* ── Button primitives ───────────────────────────── */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-dark); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-border);
+  border-radius: 9999px;
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.btn-ghost:hover:not(:disabled) { background: #e8f0fe; border-color: var(--color-primary); }
+
+.btn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: 1.5px solid var(--color-border);
+  background: #ffffff;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.btn-chip:hover:not(.active):not(:disabled) { background: #e8f0fe; border-color: var(--color-primary); }
+.btn-chip.active { background: var(--color-primary); border-color: var(--color-primary); color: #ffffff; }
+.btn-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Animated brand CTA ─────────────────────────── */
+.animated-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 36px;
+  border: 4px solid transparent;
+  font-size: 16px;
+  border-radius: 9999px;
+  font-weight: 600;
+  color: var(--color-primary);
+  box-shadow: 0 0 0 2px #ffffff;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  background: none;
+  font-family: inherit;
+}
+.animated-button svg {
+  position: absolute;
+  width: 24px;
+  fill: var(--color-primary);
+  z-index: 9;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.animated-button .arr-1 { right: 16px; }
+.animated-button .arr-2 { left: -25%; }
+.animated-button .circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background-color: var(--color-accent);
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.animated-button .text {
+  position: relative;
+  z-index: 1;
+  transform: translateX(-12px);
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.animated-button:hover {
+  box-shadow: 0 0 0 12px transparent;
+  color: #212121;
+  border-radius: 12px;
+}
+.animated-button:hover .arr-1 { right: -25%; }
+.animated-button:hover .arr-2 { left: 16px; }
+.animated-button:hover .text { transform: translateX(12px); }
+.animated-button:hover svg { fill: var(--color-primary); }
+.animated-button:active { scale: 0.95; }
+.animated-button:hover .circle { width: 220px; height: 220px; opacity: 1; }
+
+/* ── Shared empty state ──────────────────────────── */
+.resultados-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 72px 32px;
+  text-align: center;
+}
+
+.resultados-empty__icon { color: #d1d5db; }
+
+.resultados-empty__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.resultados-empty__body {
+  font-size: 14px;
+  color: #878a8c;
+  margin: 0 0 6px;
 }
 
 .mod-badge {

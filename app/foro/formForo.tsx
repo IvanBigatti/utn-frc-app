@@ -159,7 +159,7 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
               {TIPOS.map((t) => (
                 <button
                   key={t}
-                  className={`foro-tag ${tipo === t ? "active" : ""}`}
+                  className={`btn-chip ${tipo === t ? "active" : ""}`}
                   onClick={() => setTipo((prev) => (prev === t ? null : t))}
                 >
                   {t}
@@ -200,7 +200,7 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
               <label>Carrera <span className="filtro-opcional">(opcional)</span></label>
               <div className="tag-group">
                 {ingenierias.map((ing) => (
-                  <button key={ing.id} className={`foro-tag ${carreraId === ing.id ? "active" : ""}`}
+                  <button key={ing.id} className={`btn-chip ${carreraId === ing.id ? "active" : ""}`}
                     onClick={() => { setCarreraId(carreraId === ing.id ? null : ing.id); setAnio(null); setMateriaId(null); setComisionId(null); }}>
                     {ing.nombre}
                   </button>
@@ -213,7 +213,7 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
                 <label>Año <span className="filtro-opcional">(opcional)</span></label>
                 <div className="tag-group">
                   {[1, 2, 3, 4, 5].map((a) => (
-                    <button key={a} className={`foro-tag ${anio === a ? "active" : ""}`}
+                    <button key={a} className={`btn-chip ${anio === a ? "active" : ""}`}
                       onClick={() => { setAnio(anio === a ? null : a); setMateriaId(null); setComisionId(null); }}>
                       {a}° Año
                     </button>
@@ -227,7 +227,7 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
                 <label>Materia <span className="filtro-opcional">(opcional)</span></label>
                 <div className="tag-group">
                   {materias.map((mat) => (
-                    <button key={mat.id} className={`foro-tag ${materiaId === mat.id ? "active" : ""}`}
+                    <button key={mat.id} className={`btn-chip ${materiaId === mat.id ? "active" : ""}`}
                       onClick={() => { setMateriaId(materiaId === mat.id ? null : mat.id); setComisionId(null); }}>
                       {mat.nombre}
                     </button>
@@ -241,7 +241,7 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
                 <label>Comisión <span className="filtro-opcional">(opcional)</span></label>
                 <div className="tag-group">
                   {comisiones.map((com) => (
-                    <button key={com.id} className={`foro-tag ${comisionId === com.id ? "active" : ""}`}
+                    <button key={com.id} className={`btn-chip ${comisionId === com.id ? "active" : ""}`}
                       onClick={() => setComisionId(comisionId === com.id ? null : com.id)}>
                       {com.nombre}
                     </button>
@@ -265,8 +265,8 @@ export default function NuevoPostPanel({ isOpen, onClose, onPostCreado }: Props)
         </div>
 
         <div className="filtro-panel__footer">
-          <button className="filtro-limpiar-btn" onClick={onClose}>Cancelar</button>
-          <button className="filtro-aplicar-btn" onClick={handlePublicar} disabled={enviando}>
+          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn-primary filtro-aplicar-btn" onClick={handlePublicar} disabled={enviando}>
             {enviando ? "Publicando..." : "Publicar"}
           </button>
         </div>

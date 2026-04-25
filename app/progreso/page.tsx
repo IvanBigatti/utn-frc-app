@@ -297,12 +297,13 @@ const horasRestantes = totalHoras - horasAprobadas;
       <div className="progreso-stats">
         {!carreraId ? (
           <div className="progreso-stats__empty">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.3 }}>
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }} aria-hidden="true">
+              <path d="M18 20V10M12 20V4M6 20v-6" />
             </svg>
-            <p>Seleccioná una carrera para ver tu progreso</p>
+            <p className="progreso-stats__empty-title">Elegí una carrera</p>
+            <p className="progreso-stats__empty-body">
+              Vas a ver tu promedio, el porcentaje de carrera completada y el progreso por año.
+            </p>
           </div>
         ) : (
           <>
@@ -327,7 +328,7 @@ const horasRestantes = totalHoras - horasAprobadas;
 
               {/* Barra de progreso */}
               <div className="progreso-bar">
-                <div className="progreso-bar__fill" style={{ width: `${porcentaje}%` }} />
+                <div className="progreso-bar__fill" style={{ transform: `scaleX(${porcentaje / 100})` }} />
               </div>
             </div>
 
@@ -406,7 +407,7 @@ const horasRestantes = totalHoras - horasAprobadas;
                     <div key={anio} className="progreso-anio-row">
                       <span className="progreso-anio-label">{anio}°</span>
                       <div className="progreso-bar" style={{ flex: 1 }}>
-                        <div className="progreso-bar__fill" style={{ width: `${pct}%` }} />
+                        <div className="progreso-bar__fill" style={{ transform: `scaleX(${pct / 100})` }} />
                       </div>
                       <span className="progreso-anio-pct">{rendidas}/{mats.length}</span>
                     </div>

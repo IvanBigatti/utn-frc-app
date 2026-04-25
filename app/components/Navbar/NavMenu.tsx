@@ -55,7 +55,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc }: Props) {
 
         <button
           onClick={() => setOpen(o => !o)}
-          className="inline-flex items-center justify-center p-2 w-9 h-9 text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          className="inline-flex items-center justify-center p-2.5 w-11 h-11 text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
           aria-expanded={open}
           aria-controls="navbar-menu"
           aria-label={open ? "Cerrar menú" : "Abrir menú"}
