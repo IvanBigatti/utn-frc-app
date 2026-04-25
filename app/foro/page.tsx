@@ -261,7 +261,10 @@ export default function ForoPage() {
               Filtrar
               {hayFiltros && <span className="foro-filtro-btn__badge" />}
             </button>
-            <button className="btn-primary" onClick={() => setNuevoPostOpen(true)}>
+            <button
+              className="btn-primary"
+              onClick={() => userId ? setNuevoPostOpen(true) : router.push('/login?next=/foro')}
+            >
               + Publicar
             </button>
           </div>
@@ -310,7 +313,10 @@ export default function ForoPage() {
                 <p className="foro-empty__body">
                   Preguntá sobre materias, compartí apuntes o avisá sobre un parcial. La comunidad te espera.
                 </p>
-                <button className="btn-primary" onClick={() => setNuevoPostOpen(true)}>
+                <button
+                  className="btn-primary"
+                  onClick={() => userId ? setNuevoPostOpen(true) : router.push('/login?next=/foro')}
+                >
                   + Publicar
                 </button>
               </>

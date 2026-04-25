@@ -533,7 +533,7 @@ export default function HorariosPage() {
                   const candidates = bloques.filter((b) => b.type === "candidate");
                   const nCands = candidates.length;
                   return (
-                    <div key={`${dia}-${franja}`} className="horarios-grilla__celda" style={{ height: slotPx(fi) }}>
+                    <div key={`${dia}-${franja}`} className="horarios-grilla__celda" style={{ height: slotPx(fi) }} onClick={() => setActivaMatId(null)}>
                       {bloques.map((bloque) => {
                         const c = getColor(bloque.materia.id);
                         const dur = franjaIdx(bloque.horario.hora_fin) - franjaIdx(bloque.horario.hora_inicio);
@@ -560,7 +560,7 @@ export default function HorariosPage() {
                           boxShadow: bloque.isPicked && !isPick ? `0 0 0 2px ${c.text}` : "none",
                           // candidates encima de picks conflictivos
                           zIndex: !isPick ? 10 : bloque.hasConflict ? 4 : bloque.isPicked ? 5 : 3,
-                          pointerEvents: bloque.isDimmed ? "none" : "auto",
+                          pointerEvents: (bloque.isDimmed && isPick) ? "none" : "auto",
                           ...widthStyle,
                           ...conflictStyle,
                         };
@@ -570,7 +570,8 @@ export default function HorariosPage() {
                             className={`horarios-bloque ${bloque.isPicked ? "picked" : ""} ${isPick ? "is-pick" : "is-candidate"} ${bloque.hasConflict ? "has-conflict" : ""}`}
                             style={style}
                             title={bloque.hasConflict ? "Conflicto de horario" : undefined}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (isPick) selectMateria(bloque.materia.id);
                               else pickComision(bloque.materia, bloque.comision);
                             }}>

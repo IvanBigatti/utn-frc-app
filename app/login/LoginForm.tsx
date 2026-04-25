@@ -16,7 +16,7 @@ const ALLOWED_DOMAINS = [
   'frc.utn.edu.ar', 'utn.edu.ar',
 ]
 
-export default function LoginForm() {
+export default function LoginForm({ next }: { next: string }) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [loginState, loginAction, loginPending] = useActionState(signInWithEmail, undefined)
   const [registerState, registerAction, registerPending] = useActionState(signUpWithEmail, undefined)
@@ -64,6 +64,7 @@ export default function LoginForm() {
         <div className="login-card">
 
           <form action={signInWithGoogle}>
+            <input type="hidden" name="next" value={next} />
             <button type="submit" className="login-google-btn">
               <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
                 <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
@@ -86,6 +87,7 @@ export default function LoginForm() {
             className="login-form"
             onSubmit={handleSubmit}
           >
+            <input type="hidden" name="next" value={next} />
             <div className="login-field">
               <label htmlFor="email">Email</label>
               <input id="email" name="email" type="email" required placeholder="tu@email.com" />
@@ -124,6 +126,21 @@ export default function LoginForm() {
                   }}
                   className={passwordError ? 'input-error' : ''}
                 />
+              </div>
+            )}
+
+            {/* Aceptación de T&C — solo en registro */}
+            {!isLogin && (
+              <div className="login-terms">
+                <label className="login-terms__label">
+                  <input type="checkbox" name="acceptTerms" required className="login-terms__checkbox" />
+                  <span>
+                    Acepto los{' '}
+                    <a href="/terminos" target="_blank" rel="noopener noreferrer">Términos y Condiciones</a>
+                    {' '}y la{' '}
+                    <a href="/privacidad" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>
+                  </span>
+                </label>
               </div>
             )}
 

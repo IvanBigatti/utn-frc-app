@@ -26,6 +26,7 @@ export default function ProgresoPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState<number | null>(null);
   const [totalHoras, setTotalHoras] = useState<number>(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Obtener usuario
   useEffect(() => {
@@ -212,10 +213,34 @@ const horasRestantes = totalHoras - horasAprobadas;
   return (
     <div className="progreso-page">
 
+      {/* Tab lateral — solo mobile, abre el drawer */}
+      <button
+        className="progreso-sidebar-tab"
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Abrir panel de materias"
+        aria-expanded={sidebarOpen}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+
+      {/* Backdrop — solo mobile */}
+      {sidebarOpen && (
+        <div className="progreso-sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+      )}
+
       {/* Panel izquierdo — selector + materias */}
-      <div className="progreso-sidebar">
+      <div className={`progreso-sidebar${sidebarOpen ? ' progreso-sidebar--open' : ''}`}>
         <div className="progreso-sidebar__header">
-          <h1 className="progreso-title">Mi Progreso</h1>
+          <div className="progreso-sidebar__header-top">
+            <h1 className="progreso-title">Mi Progreso</h1>
+            <button className="progreso-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Cerrar panel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
           <p className="progreso-sub">Registrá las materias que rendiste y calculá tu promedio</p>
         </div>
 

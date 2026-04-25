@@ -28,10 +28,16 @@ export async function signInWithEmail(_prevState: ActionResult, formData: FormDa
 
   if (error) return { error: error.message }
 
-  redirect('/')
+  const rawNext = formData.get('next') as string | null
+  const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
+  redirect(next)
 }
 
 export async function signUpWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  if (!formData.get('acceptTerms')) {
+    return { error: 'Debés aceptar los Términos y Condiciones para registrarte.' }
+  }
+
   const email = formData.get('email') as string
   const domain = email.split('@')[1]?.toLowerCase()
   if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
@@ -55,15 +61,18 @@ export async function signUpWithEmail(_prevState: ActionResult, formData: FormDa
   return { message: 'Revisá tu email para confirmar tu cuenta.' }
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(formData: FormData) {
   const supabase = await createClient()
   const headerStore = await headers()
   const origin = headerStore.get('origin')
 
+  const rawNext = formData.get('next') as string | null
+  const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   })
 

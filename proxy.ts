@@ -3,11 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const PROTECTED_ROUTES = [
   '/upload',
-  '/foro',
   '/perfil',
   '/progreso',
-  '/resultados',
-  '/armadorHorarios',
 ]
 
 export default async function proxy(request: NextRequest) {
@@ -39,6 +36,21 @@ export default async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  if (user && pathname !== '/baneado' && pathname !== '/login') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_banned')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profile?.is_banned) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/baneado'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
+  }
+
   const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
 
   if (!user && isProtected) {
@@ -49,7 +61,9 @@ export default async function proxy(request: NextRequest) {
 
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    const rawNext = request.nextUrl.searchParams.get('next')
+    url.pathname = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
+    url.search = ''
     return NextResponse.redirect(url)
   }
 

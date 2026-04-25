@@ -1,0 +1,105 @@
+.baneado-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  padding: 24px;
+}
+
+.baneado-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.baneado-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-danger);
+  flex-shrink: 0;
+}
+
+.baneado-card h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.baneado-card p {
+  font-size: 13px;
+  color: var(--color-text-meta);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 320px;
+}
+
+.baneado-reason {
+  width: 100%;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.baneado-reason__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-danger);
+}
+
+.baneado-reason__text {
+  font-size: 13px;
+  color: var(--color-text-body);
+  line-height: 1.5;
+}
+
+.baneado-contact {
+  font-size: 12px !important;
+  color: var(--color-text-muted) !important;
+}
+
+.baneado-contact a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.baneado-signout {
+  margin-top: 4px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 12px;
+  color: var(--color-text-meta);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.baneado-signout:hover {
+  border-color: #bbb;
+  color: var(--color-text);
+}

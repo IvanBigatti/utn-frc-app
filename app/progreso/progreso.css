@@ -19,53 +19,6 @@
   background: #fff;
 }
 
-@media (max-width: 768px) {
-  .progreso-page {
-    flex-direction: column;
-  }
-
-  .progreso-sidebar {
-    width: 100%;
-    min-width: unset;
-    height: auto;
-    position: static;
-    overflow-y: unset;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-    padding: 24px 16px;
-  }
-
-  .progreso-stats {
-    padding: 24px 16px;
-    overflow-y: unset;
-  }
-
-  .progreso-tag-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .progreso-tag-block {
-    width: auto;
-    flex: 0 0 auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .progreso-sidebar {
-    padding: 16px;
-  }
-
-  .progreso-stats {
-    padding: 16px;
-  }
-
-  .progreso-nota-btns {
-    flex-wrap: wrap;
-  }
-}
-
 .progreso-sidebar__header {
   margin-bottom: 28px;
 }
@@ -129,6 +82,39 @@
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: #fff;
+}
+
+/* ── Tab lateral + close (solo mobile) ──────────── */
+.progreso-sidebar-tab {
+  display: none;
+}
+
+.progreso-sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #878a8c;
+  padding: 4px;
+  border-radius: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.progreso-sidebar-close:hover { background: #f3f4f6; }
+
+.progreso-sidebar-backdrop {
+  display: none;
+}
+
+.progreso-sidebar__header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 /* ── Materias ────────────────────────────────────── */
@@ -386,4 +372,105 @@
   white-space: nowrap;
   min-width: 40px;
   text-align: right;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .progreso-page {
+    flex-direction: column;
+  }
+
+  /* Sidebar → drawer lateral fijo */
+  .progreso-sidebar {
+    position: fixed;
+    left: 0;
+    top: calc(var(--navbar-height) + var(--safe-top, 0px));
+    height: calc(100dvh - var(--navbar-height) - var(--safe-top, 0px));
+    width: 310px;
+    min-width: unset;
+    z-index: 100;
+    overflow-y: auto;
+    border-right: 1px solid var(--color-border);
+    border-bottom: none;
+    padding: 20px 16px;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s;
+    box-shadow: none;
+  }
+
+  .progreso-sidebar--open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.13);
+  }
+
+  /* Tab lateral para abrir el drawer */
+  .progreso-sidebar-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 52px;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 0 10px 10px 0;
+    cursor: pointer;
+    z-index: 98;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.18);
+    transition: background 0.15s;
+    padding: 0;
+  }
+
+  .progreso-sidebar-tab:hover { background: var(--color-primary-dark); }
+
+  /* Botón X dentro del header del drawer */
+  .progreso-sidebar-close {
+    display: flex;
+  }
+
+  /* Backdrop oscuro */
+  .progreso-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: calc(var(--navbar-height) + var(--safe-top, 0px)) 0 0 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 99;
+  }
+
+  /* Stats ocupa todo el ancho */
+  .progreso-stats {
+    padding: 24px 16px;
+    overflow-y: unset;
+    width: 100%;
+  }
+
+  /* Chips de carrera en fila */
+  .progreso-tag-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .progreso-tag-block {
+    width: auto;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .progreso-sidebar {
+    padding: 16px;
+  }
+
+  .progreso-stats {
+    padding: 16px;
+  }
+
+  .progreso-nota-btns {
+    flex-wrap: wrap;
+  }
 }

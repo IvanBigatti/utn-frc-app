@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
 import { getAvatarSrc, type AvatarConfig, type UnlockConditionType } from "@/app/components/avatars";
+import { banearUsuario, desbanearUsuario } from "@/app/actions/moderador";
 import "./perfil.css";
 
 type Post = {
@@ -39,20 +40,31 @@ function getUnlockProgress(av: AvatarConfig, metrics: Metrics): { unlocked: bool
 export default function PerfilPage() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [avatarKey, setAvatarKey] = useState<string | null>(null);
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Metrics>({ posts: 0, votes: 0, archivos: 0, upvotes_given: 0, ratings_given: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
   const [saved, setSaved] = useState(false);
   const [isMod, setIsMod] = useState(false);
   const [avatarConfigs, setAvatarConfigs] = useState<AvatarConfig[]>([]);
 
-  const fetchData = useCallback(async (uid: string) => {
+  // Moderación de usuario ajeno
+  const [targetUid, setTargetUid] = useState<string | null>(null);
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  const [targetIsBanned, setTargetIsBanned] = useState(false);
+  const [targetBanReason, setTargetBanReason] = useState("");
+  const [banInput, setBanInput] = useState("");
+  const [banPending, setBanPending] = useState(false);
+  const [banError, setBanError] = useState("");
+
+  const fetchData = useCallback(async (uid: string, currentUid: string) => {
     const [profileRes, postsCountRes, archivosRes, postsRes, upvotesRes, ratingsRes, avatarConfigsRes] = await Promise.all([
-      supabase.from("profiles").select("avatar_key").eq("id", uid).maybeSingle(),
+      supabase.from("profiles").select("avatar_key, avatar_src").eq("id", uid).maybeSingle(),
       supabase.from("foro_post").select("*", { count: "exact", head: true }).eq("auth_user_id", uid),
       supabase.from("archivos").select("*", { count: "exact", head: true }).eq("auth_user_id", uid),
       supabase
@@ -67,6 +79,7 @@ export default function PerfilPage() {
     ]);
 
     setAvatarKey(profileRes.data?.avatar_key ?? null);
+    setAvatarSrc(profileRes.data?.avatar_src ?? null);
     setAvatarConfigs((avatarConfigsRes.data ?? []) as AvatarConfig[]);
 
     const { data: votesData } = await supabase
@@ -86,8 +99,18 @@ export default function PerfilPage() {
 
     setPosts((postsRes.data ?? []) as Post[]);
 
-    const { data: modData } = await supabase.from("moderadores").select("user_id").eq("user_id", uid).maybeSingle();
+    const { data: modData } = await supabase.from("moderadores").select("user_id").eq("user_id", currentUid).maybeSingle();
     setIsMod(!!modData);
+
+    if (!!modData && uid !== currentUid) {
+      const { data: banData } = await supabase
+        .from("profiles")
+        .select("is_banned, ban_reason")
+        .eq("id", uid)
+        .maybeSingle();
+      setTargetIsBanned(!!banData?.is_banned);
+      setTargetBanReason(banData?.ban_reason ?? "");
+    }
 
     setLoading(false);
   }, []);
@@ -98,17 +121,26 @@ export default function PerfilPage() {
         router.replace("/login");
         return;
       }
-      setUserId(session.user.id);
-      setEmail(session.user.email ?? null);
-      fetchData(session.user.id);
+      const currentUid = session.user.id;
+      const uidParam = searchParams.get("uid");
+      const viewedUid = uidParam && uidParam !== currentUid ? uidParam : currentUid;
+      const own = viewedUid === currentUid;
+
+      setUserId(viewedUid);
+      setTargetUid(own ? null : viewedUid);
+      setIsOwnProfile(own);
+      if (own) setEmail(session.user.email ?? null);
+
+      fetchData(viewedUid, currentUid);
     });
-  }, [fetchData, router]);
+  }, [fetchData, router, searchParams]);
 
   const handleSelectAvatar = async (av: AvatarConfig) => {
-    if (!userId) return;
+    if (!userId || !isOwnProfile) return;
     const { unlocked } = getUnlockProgress(av, metrics);
     if (!unlocked) return;
     setAvatarKey(av.key);
+    setAvatarSrc(av.src);
     await supabase.from("profiles").upsert({
       id: userId,
       avatar_key: av.key,
@@ -117,6 +149,35 @@ export default function PerfilPage() {
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleBan = async () => {
+    if (!targetUid) return;
+    setBanPending(true);
+    setBanError("");
+    const result = await banearUsuario(targetUid, banInput);
+    if (result.error) {
+      setBanError(result.error);
+    } else {
+      setTargetIsBanned(true);
+      setTargetBanReason(banInput);
+      setBanInput("");
+    }
+    setBanPending(false);
+  };
+
+  const handleUnban = async () => {
+    if (!targetUid) return;
+    setBanPending(true);
+    setBanError("");
+    const result = await desbanearUsuario(targetUid);
+    if (result.error) {
+      setBanError(result.error);
+    } else {
+      setTargetIsBanned(false);
+      setTargetBanReason("");
+    }
+    setBanPending(false);
   };
 
   const username = email?.split("@")[0] ?? "usuario";
@@ -128,11 +189,58 @@ export default function PerfilPage() {
   return (
     <div className="perfil-page">
 
+      {/* Panel de moderación — solo visible para mods viendo un perfil ajeno */}
+      {isMod && !isOwnProfile && targetUid && (
+        <div className="perfil-mod-panel">
+          <div className="perfil-mod-panel__header">
+            <span className="mod-badge">Mod</span>
+            <span className="perfil-mod-panel__title">Moderación de usuario</span>
+            {targetIsBanned && (
+              <span className="perfil-mod-panel__banned-badge">Baneado</span>
+            )}
+          </div>
+          {targetIsBanned && targetBanReason && (
+            <p className="perfil-mod-panel__reason">
+              <strong>Motivo actual:</strong> {targetBanReason}
+            </p>
+          )}
+          {!targetIsBanned && (
+            <div className="perfil-mod-panel__ban-row">
+              <input
+                type="text"
+                className="perfil-mod-panel__input"
+                placeholder="Motivo del baneo (opcional)"
+                value={banInput}
+                onChange={(e) => setBanInput(e.target.value)}
+                disabled={banPending}
+              />
+              <button
+                className="perfil-mod-panel__btn perfil-mod-panel__btn--ban"
+                onClick={handleBan}
+                disabled={banPending}
+              >
+                {banPending ? "..." : "Banear"}
+              </button>
+            </div>
+          )}
+          {targetIsBanned && (
+            <button
+              className="perfil-mod-panel__btn perfil-mod-panel__btn--unban"
+              onClick={handleUnban}
+              disabled={banPending}
+            >
+              {banPending ? "..." : "Quitar baneo"}
+            </button>
+          )}
+          {banError && <p className="perfil-mod-panel__error">{banError}</p>}
+        </div>
+      )}
+
       {/* Header */}
       <div className="perfil-header">
         <div className="perfil-avatar-wrapper">
           <img
-            src={getAvatarSrc(avatarKey)}
+            src={avatarSrc ?? getAvatarSrc(avatarKey)}
             alt="Avatar"
             className="perfil-avatar"
           />
@@ -165,7 +273,8 @@ export default function PerfilPage() {
         </div>
       </div>
 
-      {/* Selector de avatar */}
+      {/* Selector de avatar — solo en perfil propio */}
+      {isOwnProfile && (
       <div className="perfil-section">
         <h2 className="perfil-section__title">Elegí tu avatar</h2>
         <div className="perfil-avatar-grid">
@@ -208,6 +317,7 @@ export default function PerfilPage() {
           Avatar guardado
         </div>
       </div>
+      )}
 
       {/* Mis publicaciones */}
       <div className="perfil-section">

@@ -199,3 +199,39 @@
 .login-field input.input-error {
   border-color: var(--color-danger);
 }
+
+/* ── Aceptación de T&C ───────────────────────────── */
+.login-terms {
+  margin-top: -2px;
+}
+
+.login-terms__label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.login-terms__checkbox {
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #0a0a0a;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.login-terms__label a {
+  color: #555;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.login-terms__label a:hover {
+  color: #111;
+}
