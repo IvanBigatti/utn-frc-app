@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import ArchivoCard from './ArchivoCard'
 
 type Archivo = {
@@ -87,9 +88,17 @@ export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, e
       </div>
 
       {filtrados.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-lg mb-1">No hay material todavía</p>
-          <p className="text-sm">¡Sé el primero en subir algo para {materiaNombre}!</p>
+        <div className="resultados-empty">
+          <svg className="resultados-empty__icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <p className="resultados-empty__title">No hay material para {materiaNombre} todavía</p>
+          <p className="resultados-empty__body">Sé el primero en subir un resumen, parcial o TP.</p>
+          <Link href="/upload" className="btn-primary" style={{ textDecoration: 'none' }}>
+            Subir material
+          </Link>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">

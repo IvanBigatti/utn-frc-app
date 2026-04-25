@@ -19,7 +19,7 @@ export default async function Navbar() {
   }
 
   return (
-    <nav className="bg-white fixed w-full z-20 top-0 start-0 border-b border-gray-200">
+    <nav className="navbar bg-white fixed w-full z-20 top-0 start-0 border-b border-gray-200">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-4 h-14">
 
         <Link href="/" className="flex items-center gap-2">

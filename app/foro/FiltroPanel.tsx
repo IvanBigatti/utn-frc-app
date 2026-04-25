@@ -144,7 +144,7 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
               {TIPOS.map((t) => (
                 <button
                   key={t}
-                  className={`foro-tag ${local.tipo === t ? "active" : ""}`}
+                  className={`btn-chip ${local.tipo === t ? "active" : ""}`}
                   onClick={() => setLocal((p) => ({ ...p, tipo: p.tipo === t ? null : t }))}
                 >
                   {t}
@@ -157,7 +157,7 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
             <label>Carrera</label>
             <div className="tag-group">
               {ingenierias.map((ing) => (
-                <button key={ing.id} className={`foro-tag ${local.carreraId === ing.id ? "active" : ""}`}
+                <button key={ing.id} className={`btn-chip ${local.carreraId === ing.id ? "active" : ""}`}
                   onClick={() => setLocal((p) => ({ ...p, carreraId: p.carreraId === ing.id ? null : ing.id, anio: null, materiaId: null, comisionId: null }))}>
                   {ing.nombre}
                 </button>
@@ -170,7 +170,7 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
               <label>Año</label>
               <div className="tag-group">
                 {[1, 2, 3, 4, 5].map((a) => (
-                  <button key={a} className={`foro-tag ${local.anio === a ? "active" : ""}`}
+                  <button key={a} className={`btn-chip ${local.anio === a ? "active" : ""}`}
                     onClick={() => setLocal((p) => ({ ...p, anio: p.anio === a ? null : a, materiaId: null, comisionId: null }))}>
                     {a}° Año
                   </button>
@@ -184,7 +184,7 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
               <label>Materia <span className="filtro-opcional">(opcional)</span></label>
               <div className="tag-group">
                 {materias.map((mat) => (
-                  <button key={mat.id} className={`foro-tag ${local.materiaId === mat.id ? "active" : ""}`}
+                  <button key={mat.id} className={`btn-chip ${local.materiaId === mat.id ? "active" : ""}`}
                     onClick={() => setLocal((p) => ({ ...p, materiaId: p.materiaId === mat.id ? null : mat.id, comisionId: null }))}>
                     {mat.nombre}
                   </button>
@@ -198,7 +198,7 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
               <label>Comisión <span className="filtro-opcional">(opcional)</span></label>
               <div className="tag-group">
                 {comisiones.map((com) => (
-                  <button key={com.id} className={`foro-tag ${local.comisionId === com.id ? "active" : ""}`}
+                  <button key={com.id} className={`btn-chip ${local.comisionId === com.id ? "active" : ""}`}
                     onClick={() => setLocal((p) => ({ ...p, comisionId: p.comisionId === com.id ? null : com.id }))}>
                     {com.nombre}
                   </button>
@@ -210,8 +210,8 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
         </div>
 
         <div className="filtro-lateral__footer">
-          <button className="filtro-limpiar-btn" onClick={handleLimpiar}>Limpiar filtros</button>
-          <button className="filtro-aplicar-btn" onClick={handleAplicar}>Aplicar</button>
+          <button className="btn-ghost" onClick={handleLimpiar}>Limpiar filtros</button>
+          <button className="btn-primary filtro-aplicar-btn" onClick={handleAplicar}>Aplicar</button>
         </div>
 
       </div>

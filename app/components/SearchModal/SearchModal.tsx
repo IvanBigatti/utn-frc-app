@@ -153,7 +153,7 @@ export default function SearchModal({ isOpen, onClose }: Props) {
                 {ingenierias.map((ing) => (
                   <button
                     key={ing.id}
-                    className={`animated-button ${carreraId === ing.id ? "active" : ""}`}
+                    className={`modal-chip ${carreraId === ing.id ? "active" : ""}`}
                     onClick={() => {
                       setCarreraId(ing.id === carreraId ? null : ing.id);
                       setAnio(null);
@@ -176,7 +176,7 @@ export default function SearchModal({ isOpen, onClose }: Props) {
                 {[1, 2, 3, 4, 5].map((a) => (
                   <button
                     key={a}
-                    className={`animated-button ${anio === a ? "active" : ""}`}
+                    className={`modal-chip ${anio === a ? "active" : ""}`}
                     onClick={() => {
                       setAnio(a === anio ? null : a);
                       setMateriaId(null);
@@ -201,7 +201,7 @@ export default function SearchModal({ isOpen, onClose }: Props) {
                   {materias.map((mat) => (
                     <button
                       key={mat.id}
-                      className={`animated-button ${materiaId === mat.id ? "active" : ""}`}
+                      className={`modal-chip ${materiaId === mat.id ? "active" : ""}`}
                       onClick={() => setMateriaId(mat.id === materiaId ? null : mat.id)}
                     >
                       <span className="circle" />
@@ -213,20 +213,14 @@ export default function SearchModal({ isOpen, onClose }: Props) {
             </div>
           )}
 
-           {carreraId && anio && materiaId && (
-            <div>
-              <button
-                className="button"
-                onClick={handleBuscar}
-                disabled={!materiaId}
-              >
-                <span>
-                  <svg viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.145 18.29c-5.042 0-9.145-4.102-9.145-9.145s4.103-9.145 9.145-9.145 9.145 4.103 9.145 9.145-4.102 9.145-9.145 9.145zm0-15.167c-3.321 0-6.022 2.702-6.022 6.022s2.702 6.022 6.022 6.022 6.023-2.702 6.023-6.022-2.702-6.022-6.023-6.022zm9.263 12.443c-.817 1.176-1.852 2.188-3.046 2.981l5.452 5.453 3.014-3.013-5.42-5.421z" />
-                  </svg>
-                </span>
-              </button>
-            </div>
+          {carreraId && anio && materiaId && (
+            <button
+              className="btn-primary"
+              onClick={handleBuscar}
+              disabled={!materiaId}
+            >
+              Buscar
+            </button>
           )}
 
         </div> 

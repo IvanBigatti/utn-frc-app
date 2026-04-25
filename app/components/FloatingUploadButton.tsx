@@ -13,7 +13,7 @@ export default function FloatingUploadButton() {
   if (!ALLOWED_PATHS.includes(pathname)) return null
 
   return (
-    <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-2 sm:gap-3">
+    <div className="fixed right-4 sm:right-6 z-50 flex flex-col items-center gap-2 sm:gap-3" style={{ bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
 
       {/* Botón secundario: "Subir material" */}
       <div

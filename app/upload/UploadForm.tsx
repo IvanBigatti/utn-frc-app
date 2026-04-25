@@ -111,7 +111,7 @@ export default function UploadForm() {
         <div className="tag-group">
           {ingenierias.map(i => (
             <button key={i.id} type="button"
-              className={`upload-tag ${carreraId === i.id ? 'active' : ''}`}
+              className={`btn-chip ${carreraId === i.id ? 'active' : ''}`}
               aria-pressed={carreraId === i.id}
               onClick={() => { setCarreraId(carreraId === i.id ? null : i.id); setAnio(null); setMateriaId(null) }}>
               {i.nombre}
@@ -127,7 +127,7 @@ export default function UploadForm() {
           <div className="tag-group">
             {[1,2,3,4,5].map(a => (
               <button key={a} type="button"
-                className={`upload-tag ${anio === a ? 'active' : ''}`}
+                className={`btn-chip ${anio === a ? 'active' : ''}`}
                 aria-pressed={anio === a}
                 onClick={() => { setAnio(anio === a ? null : a); setMateriaId(null) }}>
                 {a}° Año
@@ -145,7 +145,7 @@ export default function UploadForm() {
             <div className="tag-group">
               {materias.map(m => (
                 <button key={m.id} type="button"
-                  className={`upload-tag ${materiaId === m.id ? 'active' : ''}`}
+                  className={`btn-chip ${materiaId === m.id ? 'active' : ''}`}
                   aria-pressed={materiaId === m.id}
                   onClick={() => setMateriaId(materiaId === m.id ? null : m.id)}>
                   {m.nombre}
@@ -162,7 +162,7 @@ export default function UploadForm() {
         <div className="tag-group">
           {TIPOS.map(t => (
             <button key={t.value} type="button"
-              className={`upload-tag ${tipo === t.value ? 'active' : ''}`}
+              className={`btn-chip ${tipo === t.value ? 'active' : ''}`}
               aria-pressed={tipo === t.value}
               onClick={() => setTipo(t.value)}>
               {t.label}
@@ -236,7 +236,7 @@ export default function UploadForm() {
             aria-valuemax={100}
             aria-label="Progreso de subida"
           >
-            <div className="upload-progress__bar" style={{ width: `${progress}%` }} />
+            <div className="upload-progress__bar" style={{ transform: `scaleX(${progress / 100})` }} />
           </div>
           <p className="upload-scanning-notice">
             Analizando el archivo por seguridad, esto puede tardar unos segundos...
@@ -249,10 +249,20 @@ export default function UploadForm() {
       <button
         type="submit"
         disabled={uploading || !file || !materiaId || !nombre.trim()}
-        className="upload-submit"
+        className="btn-primary upload-submit"
       >
         {uploading ? 'Subiendo...' : 'Subir material'}
       </button>
+
+      {!uploading && (!materiaId || !file || !nombre.trim()) && (
+        <p className="upload-hint" aria-live="polite">
+          {[
+            !materiaId && 'seleccioná una materia',
+            !nombre.trim() && 'escribí un nombre',
+            !file && 'adjuntá un archivo',
+          ].filter(Boolean).join(' · ')}
+        </p>
+      )}
 
     </form>
   )

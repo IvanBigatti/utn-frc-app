@@ -3,10 +3,9 @@
   flex-direction: column;
   gap: 20px;
   padding: 40px 32px;
-  background: #fafaf8;
-  border-left: 1px solid #e8e8e4;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
   overflow-y: auto;
-  font-family: 'Inter', sans-serif;
 }
 
 .stats-panel__title {
@@ -27,7 +26,7 @@
 
 .sp-card {
   background: #fff;
-  border: 1px solid #e8e8e4;
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 24px;
   display: flex;
@@ -51,7 +50,7 @@
 .sp-card__value {
   font-size: 40px;
   font-weight: 700;
-  color: #1f387e;
+  color: var(--color-primary);
   margin: 0;
   line-height: 1;
 }
@@ -115,23 +114,25 @@
 .sp-bar {
   flex: 1;
   height: 8px;
-  background: #f0f0ee;
+  background: var(--color-border-subtle);
   border-radius: 100px;
   overflow: hidden;
 }
 
 .sp-bar__fill {
+  width: 100%;
   height: 100%;
-  background: #1f387e;
+  background: var(--color-primary);
   border-radius: 100px;
-  transition: width 0.6s ease;
+  transform-origin: left center;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── Link ────────────────────────────────────────────── */
 .sp-link {
   font-size: 13px;
   font-weight: 600;
-  color: #1f387e;
+  color: var(--color-primary);
   text-decoration: none;
   align-self: flex-start;
   opacity: 0.8;
@@ -144,7 +145,7 @@
   .stats-panel {
     padding: 24px 16px;
     border-left: none;
-    border-top: 1px solid #e8e8e4;
+    border-top: 1px solid var(--color-border);
   }
 }
 
@@ -166,7 +167,7 @@
   gap: 12px;
   padding: 32px 24px;
   background: #fff;
-  border: 1px solid #e8e8e4;
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   text-align: center;
   color: #aaa;
@@ -174,7 +175,7 @@
 }
 
 .sp-empty__link {
-  color: #1f387e;
+  color: var(--color-primary);
   font-weight: 600;
   text-decoration: none;
 }
@@ -228,17 +229,16 @@
   padding: 10px 20px;
   background: #fff;
   color: #1a1a2e;
-  border: 1.5px solid #e8e8e4;
+  border: 1.5px solid var(--color-border);
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.15s, background 0.15s;
 }
 
 .sp-google-btn:hover {
-  background: #f5f7fd;
+  background: var(--color-primary-wash);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 }

@@ -1,0 +1,38 @@
+/* ── TUTN Design Tokens ─────────────────────────────────────────────────
+   Single source of truth for all design system values.
+   Import this file in globals.css. Never duplicate values across CSS files.
+   ─────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Typography ────────────────────────────────────────────────────── */
+  --font-sans: var(--font-inter, 'Inter', 'Arial', sans-serif);
+
+  /* ── Brand ─────────────────────────────────────────────────────────── */
+  --color-primary:       #1f387e;   /* Azul Pizarrón — the only static accent */
+  --color-primary-dark:  #162d4a;   /* Primary button hover */
+  --color-primary-light: #a0b0d8;   /* Chip/input hover border */
+  --color-primary-ghost: #d0d7ed;   /* Inactive chip/dropzone border */
+  --color-primary-wash:  #f5f7fd;   /* Ghost chip hover background */
+  --color-accent:        #c5e5e4;   /* Birome Turquesa — motion only, never static */
+
+  /* ── Surfaces ──────────────────────────────────────────────────────── */
+  --color-surface:       #fafaf8;   /* Papel Cuadriculado — default app background */
+  --color-card:          #ffffff;   /* Blanco Limpio — elevated surfaces */
+
+  /* ── Borders ───────────────────────────────────────────────────────── */
+  --color-border:        #e8e8e4;   /* Línea de Carpeta — cards, inputs, dividers */
+  --color-border-subtle: #f0f0ee;   /* Línea Sutil — section rhythm hairlines */
+
+  /* ── Text ──────────────────────────────────────────────────────────── */
+  --color-text:          #111827;   /* Tinta Oscura — headings and structural labels */
+  --color-text-body:     #374151;   /* Grafito — body copy */
+  --color-text-meta:     #6b7280;   /* Polvo de Tiza — metadata, dates, subtext */
+  --color-text-muted:    #9ca3af;   /* Lápiz Gris — placeholders, disabled, eyebrows */
+
+  /* ── Status ────────────────────────────────────────────────────────── */
+  --color-danger:        #e05555;   /* Rojo Parcial — errors and destructive actions */
+  --color-success:       #5a9e6f;   /* Verde Aprobado — confirmation states */
+
+  /* ── Accessibility ─────────────────────────────────────────────────── */
+  --color-focus:         #2563eb;   /* Focus ring — WCAG AA contrast, not a brand color */
+}

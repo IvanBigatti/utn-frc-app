@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
 import FiltroPanel from "./FiltroPanel";
@@ -44,21 +44,48 @@ type SortOrder = "recientes" | "votados";
 export default function ForoPage() {
   const supabase = createClient();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroOpen, setFiltroOpen] = useState(false);
   const [nuevoPostOpen, setNuevoPostOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [esMod, setEsMod] = useState(false);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("recientes");
+  const [sortOrder, setSortOrder] = useState<SortOrder>(
+    (searchParams.get("sort") as SortOrder | null) ?? "recientes"
+  );
   const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
   const [authorMap, setAuthorMap] = useState<Record<string, AuthorInfo>>({});
 
-  const [filtros, setFiltros] = useState<Filtros>({
-    carreraId: null, anio: null, materiaId: null, comisionId: null, tipo: null,
-  });
+  const [filtros, setFiltros] = useState<Filtros>(() => ({
+    carreraId: searchParams.get("carreraId") ? Number(searchParams.get("carreraId")) : null,
+    anio: searchParams.get("anio") ? Number(searchParams.get("anio")) : null,
+    materiaId: searchParams.get("materiaId") ? Number(searchParams.get("materiaId")) : null,
+    comisionId: searchParams.get("comisionId") ? Number(searchParams.get("comisionId")) : null,
+    tipo: (searchParams.get("tipo") as TipoPost | null) ?? null,
+  }));
   const [confirmando, setConfirmando] = useState<{ id: number; tipo: "propio" | "mod" } | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+
+  const showToast = useCallback((msg: string, type: "success" | "error" = "error") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  // Sync filters + sort order to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filtros.carreraId) params.set("carreraId", String(filtros.carreraId));
+    if (filtros.anio)      params.set("anio",      String(filtros.anio));
+    if (filtros.materiaId) params.set("materiaId", String(filtros.materiaId));
+    if (filtros.comisionId) params.set("comisionId", String(filtros.comisionId));
+    if (filtros.tipo)      params.set("tipo",      filtros.tipo);
+    if (sortOrder !== "recientes") params.set("sort", sortOrder);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [filtros, sortOrder, pathname, router]);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -153,18 +180,36 @@ export default function ForoPage() {
     const isUnvote = current === value;
 
     if (isUnvote) {
-      await supabase.from("foro_vote").delete()
-        .eq("post_id", postId).eq("auth_user_id", userId);
+      // Optimistic
       setUserVotes((prev) => { const next = { ...prev }; delete next[postId]; return next; });
       setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score - value } : p));
+      const { error } = await supabase.from("foro_vote").delete()
+        .eq("post_id", postId).eq("auth_user_id", userId);
+      if (error) {
+        // Rollback
+        setUserVotes((prev) => ({ ...prev, [postId]: value }));
+        setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score + value } : p));
+        showToast("No se pudo registrar el voto. Intentá de nuevo.");
+      }
     } else {
       const delta = value - (current ?? 0);
-      await supabase.from("foro_vote").upsert(
+      // Optimistic
+      setUserVotes((prev) => ({ ...prev, [postId]: value }));
+      setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score + delta } : p));
+      const { error } = await supabase.from("foro_vote").upsert(
         { post_id: postId, auth_user_id: userId, value },
         { onConflict: "post_id,auth_user_id" }
       );
-      setUserVotes((prev) => ({ ...prev, [postId]: value }));
-      setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score + delta } : p));
+      if (error) {
+        // Rollback
+        setUserVotes((prev) => {
+          const next = { ...prev };
+          if (current !== null) next[postId] = current; else delete next[postId];
+          return next;
+        });
+        setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score - delta } : p));
+        showToast("No se pudo registrar el voto. Intentá de nuevo.");
+      }
     }
   };
 
@@ -178,12 +223,15 @@ export default function ForoPage() {
     setConfirmando(null);
     if (tipo === "propio") {
       const { error } = await supabase.from("foro_post").delete().eq("id", postId).eq("auth_user_id", userId);
-      if (!error) setPosts((prev) => prev.filter((p) => p.id !== postId));
+      if (!error) {
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
+      } else {
+        showToast("No se pudo eliminar la publicación. Intentá de nuevo.");
+      }
     } else {
       const result = await eliminarPostMod(postId);
       if (result.error) {
-        setErrorMsg(result.error);
-        setTimeout(() => setErrorMsg(null), 4000);
+        showToast(result.error);
       } else {
         setPosts((prev) => prev.filter((p) => p.id !== postId));
       }
@@ -213,7 +261,10 @@ export default function ForoPage() {
               Filtrar
               {hayFiltros && <span className="foro-filtro-btn__badge" />}
             </button>
-            <button className="foro-nuevo-btn" onClick={() => setNuevoPostOpen(true)}>
+            <button
+              className="btn-primary"
+              onClick={() => userId ? setNuevoPostOpen(true) : router.push('/login?next=/foro')}
+            >
               + Publicar
             </button>
           </div>
@@ -239,14 +290,36 @@ export default function ForoPage() {
 
         {/* Lista de posts */}
         {loading ? (
-          <div className="foro-loading-state">Cargando publicaciones...</div>
+          <div className="foro-loading-state" role="status">Cargando publicaciones...</div>
         ) : posts.length === 0 ? (
           <div className="foro-empty">
-            <p>No hay publicaciones todavía.</p>
-            {hayFiltros && (
-              <button className="foro-limpiar" onClick={() => setFiltros(filtrosVacios)}>
-                Limpiar filtros
-              </button>
+            {hayFiltros ? (
+              <>
+                <svg className="foro-empty__icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+                  <line x1="18" y1="3" x2="22" y2="7" /><line x1="22" y1="3" x2="18" y2="7" />
+                </svg>
+                <p className="foro-empty__title">Sin resultados para esos filtros</p>
+                <button className="btn-ghost" onClick={() => setFiltros(filtrosVacios)}>
+                  Limpiar filtros
+                </button>
+              </>
+            ) : (
+              <>
+                <svg className="foro-empty__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                <p className="foro-empty__title">El foro todavía está vacío</p>
+                <p className="foro-empty__body">
+                  Preguntá sobre materias, compartí apuntes o avisá sobre un parcial. La comunidad te espera.
+                </p>
+                <button
+                  className="btn-primary"
+                  onClick={() => userId ? setNuevoPostOpen(true) : router.push('/login?next=/foro')}
+                >
+                  + Publicar
+                </button>
+              </>
             )}
           </div>
         ) : (
@@ -382,11 +455,13 @@ export default function ForoPage() {
             ))}
           </div>
         )}
-        {errorMsg && (
-          <p className="foro-error-msg" role="alert">{errorMsg}</p>
-        )}
-
       </div>
+
+      {toast && (
+        <div className={`foro-toast foro-toast--${toast.type}`} role="alert" aria-live="assertive">
+          {toast.msg}
+        </div>
+      )}
 
       {/* Panel de filtros */}
       <FiltroPanel
