@@ -11,6 +11,7 @@ type MateriaConAnio = {
   id: number;
   nombre: string;
   anio: number;
+  horas_semanales: number;
 };
 type ProgresoItem = {
   materia_id: number;
@@ -48,10 +49,11 @@ export default function ProgresoPage() {
       setLoading(true);
 
       // Traer todas las comisiones de la ingeniería
-      const { data: comisiones } = await supabase
+      const { data: comisionesRaw } = await supabase
         .from("comision")
         .select("id, año")
         .eq("ingenieria_id", carreraId);
+      const comisiones = comisionesRaw as unknown as { id: number; año: number }[] | null;
 
       if (!comisiones?.length) { setMateriasPorAnio(new Map()); setLoading(false); return; }
 
@@ -64,7 +66,7 @@ export default function ProgresoPage() {
       if (!rels) { setMateriasPorAnio(new Map()); setLoading(false); return; }
 
       // Mapear materia → año (usando el año de la primera comisión que aparezca)
-      const materiaAnioMap = new Map<number, { nombre: string; anio: number }>();
+      const materiaAnioMap = new Map<number, { nombre: string; anio: number; horas_semanales: number }>();
       for (const rel of rels as any[]) {
         if (!rel.materia) continue;
         if (materiaAnioMap.has(rel.materia.id)) continue;

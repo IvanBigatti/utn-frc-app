@@ -129,7 +129,7 @@ export default function HorariosPage() {
 
       // Agrupar por materia
       const map = new Map<number, MateriaConComisiones>();
-      for (const rel of rels as { materia: { id: number; nombre: string } | null; horarios: Horario[] | null; idComision: number; cuatrimestre: number }[]) {
+      for (const rel of rels as unknown as { materia: { id: number; nombre: string } | null; horarios: Horario[] | null; idComision: number; cuatrimestre: number }[]) {
         if (!rel.materia || !rel.horarios) continue;
         const mat = rel.materia;
         if (!map.has(mat.id)) {

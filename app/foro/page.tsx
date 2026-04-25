@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
@@ -41,7 +41,7 @@ type Filtros = {
 
 type SortOrder = "recientes" | "votados";
 
-export default function ForoPage() {
+function ForoContent() {
   const supabase = createClient();
   const router = useRouter();
   const pathname = usePathname();
@@ -480,5 +480,13 @@ export default function ForoPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function ForoPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>Cargando...</div>}>
+      <ForoContent />
+    </Suspense>
   );
 }

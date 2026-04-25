@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
@@ -37,7 +37,7 @@ function getUnlockProgress(av: AvatarConfig, metrics: Metrics): { unlocked: bool
   return { unlocked: current >= threshold, current, threshold };
 }
 
-export default function PerfilPage() {
+function PerfilContent() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -370,5 +370,13 @@ export default function PerfilPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function PerfilPage() {
+  return (
+    <Suspense fallback={<div className="perfil-loading" role="status" aria-live="polite">Cargando perfil...</div>}>
+      <PerfilContent />
+    </Suspense>
   );
 }
