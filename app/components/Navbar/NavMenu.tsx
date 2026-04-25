@@ -15,10 +15,12 @@ const NAV_LINKS = [
 type Props = {
   email: string | null
   avatarKey: string | null
+  avatarSrc: string | null
 }
 
-export default function NavMenu({ email, avatarKey }: Props) {
+export default function NavMenu({ email, avatarKey, avatarSrc }: Props) {
   const [open, setOpen] = useState(false)
+  const resolvedSrc = avatarSrc ?? getAvatarSrc(avatarKey)
 
   return (
     <>
@@ -28,7 +30,7 @@ export default function NavMenu({ email, avatarKey }: Props) {
           <div className="hidden md:flex items-center gap-3">
             <Link href="/perfil" className="flex-shrink-0" title="Mi perfil">
               <img
-                src={getAvatarSrc(avatarKey)}
+                src={resolvedSrc}
                 alt="Perfil"
                 className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-blue-400 transition-colors object-cover bg-gray-100"
               />
@@ -91,7 +93,7 @@ export default function NavMenu({ email, avatarKey }: Props) {
                 className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
               >
                 <img
-                  src={getAvatarSrc(avatarKey)}
+                  src={resolvedSrc}
                   alt="Perfil"
                   className="w-6 h-6 rounded-full border border-gray-200 bg-gray-100"
                 />

@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
               // Next.js requires unsafe-inline for hydration scripts; unsafe-eval for dev HMR
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: *.supabase.co *.google.com *.googleusercontent.com lh3.googleusercontent.com",
+              "img-src 'self' data: blob: *.supabase.co *.google.com *.googleusercontent.com lh3.googleusercontent.com api.dicebear.com",
               "font-src 'self'",
               // Supabase auth + storage + realtime, Google OAuth, VirusTotal
               "connect-src 'self' *.supabase.co accounts.google.com www.googleapis.com www.virustotal.com",

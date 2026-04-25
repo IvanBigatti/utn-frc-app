@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/client";
-import { AVATARS, getAvatarSrc } from "@/app/components/avatars";
+import { getAvatarSrc, type AvatarConfig, type UnlockConditionType } from "@/app/components/avatars";
 import "./perfil.css";
 
 type Post = {
@@ -18,7 +18,22 @@ type Metrics = {
   posts: number;
   votes: number;
   archivos: number;
+  upvotes_given: number;
+  ratings_given: number;
 };
+
+function getUnlockProgress(av: AvatarConfig, metrics: Metrics): { unlocked: boolean; current: number; threshold: number } {
+  if (av.is_free || !av.unlock_condition) return { unlocked: true, current: 0, threshold: 0 };
+  const { type, threshold } = av.unlock_condition;
+  const map: Record<UnlockConditionType, number> = {
+    upload_files: metrics.archivos,
+    rate_files: metrics.ratings_given,
+    upvote_posts: metrics.upvotes_given,
+    post_forum: metrics.posts,
+  };
+  const current = map[type] ?? 0;
+  return { unlocked: current >= threshold, current, threshold };
+}
 
 export default function PerfilPage() {
   const supabase = createClient();
@@ -28,13 +43,14 @@ export default function PerfilPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [avatarKey, setAvatarKey] = useState<string | null>(null);
-  const [metrics, setMetrics] = useState<Metrics>({ posts: 0, votes: 0, archivos: 0 });
+  const [metrics, setMetrics] = useState<Metrics>({ posts: 0, votes: 0, archivos: 0, upvotes_given: 0, ratings_given: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
   const [saved, setSaved] = useState(false);
   const [isMod, setIsMod] = useState(false);
+  const [avatarConfigs, setAvatarConfigs] = useState<AvatarConfig[]>([]);
 
   const fetchData = useCallback(async (uid: string) => {
-    const [profileRes, postsCountRes, archivosRes, postsRes] = await Promise.all([
+    const [profileRes, postsCountRes, archivosRes, postsRes, upvotesRes, ratingsRes, avatarConfigsRes] = await Promise.all([
       supabase.from("profiles").select("avatar_key").eq("id", uid).maybeSingle(),
       supabase.from("foro_post").select("*", { count: "exact", head: true }).eq("auth_user_id", uid),
       supabase.from("archivos").select("*", { count: "exact", head: true }).eq("auth_user_id", uid),
@@ -44,11 +60,14 @@ export default function PerfilPage() {
         .eq("auth_user_id", uid)
         .order("created_at", { ascending: false })
         .limit(20),
+      supabase.from("foro_vote").select("*", { count: "exact", head: true }).eq("auth_user_id", uid).eq("value", 1),
+      supabase.from("puntuaciones").select("*", { count: "exact", head: true }).eq("usuario_id", uid),
+      supabase.from("avatar_configs").select("*").order("display_order"),
     ]);
 
     setAvatarKey(profileRes.data?.avatar_key ?? null);
+    setAvatarConfigs((avatarConfigsRes.data ?? []) as AvatarConfig[]);
 
-    // Sumar votos de todos los posts del usuario
     const { data: votesData } = await supabase
       .from("foro_post_summary")
       .select("vote_score")
@@ -60,6 +79,8 @@ export default function PerfilPage() {
       posts: postsCountRes.count ?? 0,
       votes: totalVotes,
       archivos: archivosRes.count ?? 0,
+      upvotes_given: upvotesRes.count ?? 0,
+      ratings_given: ratingsRes.count ?? 0,
     });
 
     setPosts((postsRes.data ?? []) as Post[]);
@@ -82,10 +103,17 @@ export default function PerfilPage() {
     });
   }, [fetchData, router]);
 
-  const handleSelectAvatar = async (key: string) => {
+  const handleSelectAvatar = async (av: AvatarConfig) => {
     if (!userId) return;
-    setAvatarKey(key);
-    await supabase.from("profiles").upsert({ id: userId, avatar_key: key, updated_at: new Date().toISOString() });
+    const { unlocked } = getUnlockProgress(av, metrics);
+    if (!unlocked) return;
+    setAvatarKey(av.key);
+    await supabase.from("profiles").upsert({
+      id: userId,
+      avatar_key: av.key,
+      avatar_src: av.src,
+      updated_at: new Date().toISOString(),
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -140,17 +168,37 @@ export default function PerfilPage() {
       <div className="perfil-section">
         <h2 className="perfil-section__title">Elegí tu avatar</h2>
         <div className="perfil-avatar-grid">
-          {AVATARS.map((av) => (
-            <button
-              key={av.key}
-              className={`perfil-avatar-option ${avatarKey === av.key ? "selected" : ""}`}
-              onClick={() => handleSelectAvatar(av.key)}
-              title={av.label}
-            >
-              <img src={av.src} alt={av.label} />
-              <span>{av.label}</span>
-            </button>
-          ))}
+          {avatarConfigs.map((av) => {
+            const { unlocked, current, threshold } = getUnlockProgress(av, metrics);
+            return (
+              <button
+                key={av.key}
+                className={`perfil-avatar-option ${avatarKey === av.key ? "selected" : ""} ${!unlocked ? "locked" : ""}`}
+                onClick={() => handleSelectAvatar(av)}
+                title={unlocked ? av.name : av.unlock_condition?.description ?? "Bloqueado"}
+                disabled={!unlocked}
+              >
+                <div className="perfil-avatar-img-wrapper">
+                  <img src={av.src} alt={av.name} />
+                  {!unlocked && (
+                    <div className="perfil-avatar-lock-overlay" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <span>{av.name}</span>
+                {!unlocked && av.unlock_condition && (
+                  <>
+                    <span className="perfil-avatar-unlock-hint">{current}/{threshold}</span>
+                    <span className="perfil-avatar-unlock-desc">{av.unlock_condition.description}</span>
+                  </>
+                )}
+              </button>
+            );
+          })}
         </div>
         <div className="perfil-saved" style={{ opacity: saved ? 1 : 0 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

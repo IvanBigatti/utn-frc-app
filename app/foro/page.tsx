@@ -28,7 +28,7 @@ type Post = {
   comment_count: number;
 };
 
-type AuthorInfo = { name: string; avatarKey: string | null; isMod: boolean };
+type AuthorInfo = { name: string; avatarKey: string | null; avatarSrc: string | null; isMod: boolean };
 
 type Filtros = {
   carreraId: number | null;
@@ -104,17 +104,17 @@ export default function ForoPage() {
     if (uids.length > 0) {
       const [emailsRes, profilesRes, modsRes] = await Promise.all([
         supabase.rpc("get_user_emails", { user_ids: uids }),
-        supabase.from("profiles").select("id, avatar_key").in("id", uids),
+        supabase.from("profiles").select("id, avatar_key, avatar_src").in("id", uids),
         supabase.from("moderadores").select("user_id").in("user_id", uids),
       ]);
       const modSet = new Set((modsRes.data ?? []).map((m: { user_id: string }) => m.user_id));
       const map: Record<string, AuthorInfo> = {};
-      uids.forEach(uid => { map[uid] = { name: "usuario", avatarKey: null, isMod: modSet.has(uid) }; });
+      uids.forEach(uid => { map[uid] = { name: "usuario", avatarKey: null, avatarSrc: null, isMod: modSet.has(uid) }; });
       (emailsRes.data ?? []).forEach((row: { id: string; email: string }) => {
         if (map[row.id]) map[row.id].name = row.email.split("@")[0];
       });
-      (profilesRes.data ?? []).forEach((p: { id: string; avatar_key: string | null }) => {
-        if (map[p.id]) map[p.id].avatarKey = p.avatar_key;
+      (profilesRes.data ?? []).forEach((p: { id: string; avatar_key: string | null; avatar_src: string | null }) => {
+        if (map[p.id]) { map[p.id].avatarKey = p.avatar_key; map[p.id].avatarSrc = p.avatar_src; }
       });
       setAuthorMap(map);
     }
@@ -279,7 +279,7 @@ export default function ForoPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           className="foro-post-card__author-avatar"
-                          src={getAvatarSrc(authorMap[post.auth_user_id]?.avatarKey)}
+                          src={authorMap[post.auth_user_id]?.avatarSrc ?? getAvatarSrc(authorMap[post.auth_user_id]?.avatarKey)}
                           alt=""
                         />
                         {authorMap[post.auth_user_id]?.name ?? "usuario"}
