@@ -186,6 +186,22 @@
   cursor: not-allowed;
 }
 
+@media (max-width: 480px) {
+  .upload-form {
+    gap: 24px;
+    padding: 24px 16px 48px;
+  }
+
+  .upload-dropzone {
+    padding: 20px 16px;
+  }
+
+  .upload-tag {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
 /* Success */
 .upload-success {
   display: flex;

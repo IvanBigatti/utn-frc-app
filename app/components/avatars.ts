@@ -13,6 +13,23 @@ export const AVATARS = [
 
 export type AvatarKey = typeof AVATARS[number]["key"];
 
+export type UnlockConditionType = "upload_files" | "rate_files" | "upvote_posts" | "post_forum";
+
+export type UnlockCondition = {
+  type: UnlockConditionType;
+  threshold: number;
+  description: string;
+};
+
+export type AvatarConfig = {
+  key: string;
+  name: string;
+  src: string;
+  is_free: boolean;
+  unlock_condition: UnlockCondition | null;
+  display_order: number;
+};
+
 const DEFAULT_AVATAR_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23e5e7eb'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%239ca3af'/%3E%3Cellipse cx='20' cy='34' rx='11' ry='8' fill='%239ca3af'/%3E%3C/svg%3E`;
 
 export function getAvatarSrc(key: string | null | undefined): string {

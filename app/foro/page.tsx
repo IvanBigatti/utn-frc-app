@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
 import FiltroPanel from "./FiltroPanel";
 import "./foro.css";
@@ -28,7 +29,7 @@ type Post = {
   comment_count: number;
 };
 
-type AuthorInfo = { name: string; avatarKey: string | null; isMod: boolean };
+type AuthorInfo = { name: string; avatarKey: string | null; avatarSrc: string | null; isMod: boolean };
 
 type Filtros = {
   carreraId: number | null;
@@ -56,6 +57,8 @@ export default function ForoPage() {
   const [filtros, setFiltros] = useState<Filtros>({
     carreraId: null, anio: null, materiaId: null, comisionId: null, tipo: null,
   });
+  const [confirmando, setConfirmando] = useState<{ id: number; tipo: "propio" | "mod" } | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -104,17 +107,17 @@ export default function ForoPage() {
     if (uids.length > 0) {
       const [emailsRes, profilesRes, modsRes] = await Promise.all([
         supabase.rpc("get_user_emails", { user_ids: uids }),
-        supabase.from("profiles").select("id, avatar_key").in("id", uids),
+        supabase.from("profiles").select("id, avatar_key, avatar_src").in("id", uids),
         supabase.from("moderadores").select("user_id").in("user_id", uids),
       ]);
       const modSet = new Set((modsRes.data ?? []).map((m: { user_id: string }) => m.user_id));
       const map: Record<string, AuthorInfo> = {};
-      uids.forEach(uid => { map[uid] = { name: "usuario", avatarKey: null, isMod: modSet.has(uid) }; });
+      uids.forEach(uid => { map[uid] = { name: "usuario", avatarKey: null, avatarSrc: null, isMod: modSet.has(uid) }; });
       (emailsRes.data ?? []).forEach((row: { id: string; email: string }) => {
         if (map[row.id]) map[row.id].name = row.email.split("@")[0];
       });
-      (profilesRes.data ?? []).forEach((p: { id: string; avatar_key: string | null }) => {
-        if (map[p.id]) map[p.id].avatarKey = p.avatar_key;
+      (profilesRes.data ?? []).forEach((p: { id: string; avatar_key: string | null; avatar_src: string | null }) => {
+        if (map[p.id]) { map[p.id].avatarKey = p.avatar_key; map[p.id].avatarSrc = p.avatar_src; }
       });
       setAuthorMap(map);
     }
@@ -165,13 +168,26 @@ export default function ForoPage() {
     }
   };
 
-  const handleEliminar = async (e: React.MouseEvent, postId: number) => {
+  const handleEliminar = (e: React.MouseEvent, postId: number) => {
     e.stopPropagation();
-    const confirmar = window.confirm("¿Seguro que querés eliminar esta publicación?");
-    if (!confirmar) return;
+    setConfirmando({ id: postId, tipo: "propio" });
+  };
 
-    const { error } = await supabase.from("foro_post").delete().eq("id", postId).eq("auth_user_id", userId);
-    if (!error) setPosts((prev) => prev.filter((p) => p.id !== postId));
+  const handleConfirmarEliminar = async (e: React.MouseEvent, postId: number, tipo: "propio" | "mod") => {
+    e.stopPropagation();
+    setConfirmando(null);
+    if (tipo === "propio") {
+      const { error } = await supabase.from("foro_post").delete().eq("id", postId).eq("auth_user_id", userId);
+      if (!error) setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } else {
+      const result = await eliminarPostMod(postId);
+      if (result.error) {
+        setErrorMsg(result.error);
+        setTimeout(() => setErrorMsg(null), 4000);
+      } else {
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
+      }
+    }
   };
 
   const hayFiltros = Object.values(filtros).some((v) => v !== null);
@@ -236,7 +252,7 @@ export default function ForoPage() {
         ) : (
           <div className="foro-list">
             {posts.map((post) => (
-              <div key={post.id} className="foro-post-card" onClick={() => router.push(`/foro/${post.id}`)}>
+              <article key={post.id} className="foro-post-card" onClick={() => router.push(`/foro/${post.id}`)}>
 
                 {/* Vote column */}
                 <div className="foro-post-card__vote" onClick={(e) => e.stopPropagation()}>
@@ -279,7 +295,7 @@ export default function ForoPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           className="foro-post-card__author-avatar"
-                          src={getAvatarSrc(authorMap[post.auth_user_id]?.avatarKey)}
+                          src={authorMap[post.auth_user_id]?.avatarSrc ?? getAvatarSrc(authorMap[post.auth_user_id]?.avatarKey)}
                           alt=""
                         />
                         {authorMap[post.auth_user_id]?.name ?? "usuario"}
@@ -306,7 +322,11 @@ export default function ForoPage() {
                     <span>{new Date(post.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</span>
                   </div>
 
-                  <h2 className="foro-post-card__titulo">{post.titulo}</h2>
+                  <h2 className="foro-post-card__titulo">
+                    <Link href={`/foro/${post.id}`} className="foro-post-card__titulo-link" onClick={(e) => e.stopPropagation()}>
+                      {post.titulo}
+                    </Link>
+                  </h2>
                   <p className="foro-post-card__preview">{post.contenido}</p>
 
                   <div className="foro-post-card__footer">
@@ -318,38 +338,52 @@ export default function ForoPage() {
                     </button>
 
                     {userId === post.auth_user_id && (
-                      <button
-                        className="foro-post-card__action-btn foro-post-card__action-btn--danger"
-                        onClick={(e) => handleEliminar(e, post.id)}
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
-                        </svg>
-                        Eliminar
-                      </button>
+                      confirmando?.id === post.id && confirmando.tipo === "propio" ? (
+                        <span className="foro-post-card__confirm" onClick={(e) => e.stopPropagation()}>
+                          <span>¿Eliminar?</span>
+                          <button className="foro-post-card__confirm-yes" onClick={(e) => handleConfirmarEliminar(e, post.id, "propio")}>Sí</button>
+                          <button className="foro-post-card__confirm-no" onClick={(e) => { e.stopPropagation(); setConfirmando(null); }}>No</button>
+                        </span>
+                      ) : (
+                        <button
+                          className="foro-post-card__action-btn foro-post-card__action-btn--danger"
+                          onClick={(e) => handleEliminar(e, post.id)}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                          </svg>
+                          Eliminar
+                        </button>
+                      )
                     )}
                     {esMod && userId !== post.auth_user_id && (
-                      <button
-                        className="foro-post-card__action-btn foro-post-card__action-btn--danger"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!window.confirm("¿Eliminar esta publicación como moderador?")) return;
-                          const result = await eliminarPostMod(post.id);
-                          if (result.error) { alert(result.error); return; }
-                          setPosts((prev) => prev.filter((p) => p.id !== post.id));
-                        }}
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
-                        </svg>
-                      </button>
+                      confirmando?.id === post.id && confirmando.tipo === "mod" ? (
+                        <span className="foro-post-card__confirm" onClick={(e) => e.stopPropagation()}>
+                          <span>¿Eliminar (mod)?</span>
+                          <button className="foro-post-card__confirm-yes" onClick={(e) => handleConfirmarEliminar(e, post.id, "mod")}>Sí</button>
+                          <button className="foro-post-card__confirm-no" onClick={(e) => { e.stopPropagation(); setConfirmando(null); }}>No</button>
+                        </span>
+                      ) : (
+                        <button
+                          className="foro-post-card__action-btn foro-post-card__action-btn--danger"
+                          onClick={(e) => { e.stopPropagation(); setConfirmando({ id: post.id, tipo: "mod" }); }}
+                          aria-label="Eliminar publicación (mod)"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                          </svg>
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
 
-              </div>
+              </article>
             ))}
           </div>
+        )}
+        {errorMsg && (
+          <p className="foro-error-msg" role="alert">{errorMsg}</p>
         )}
 
       </div>

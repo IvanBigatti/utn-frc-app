@@ -37,6 +37,30 @@ type Comment = {
 
 type UserVote = 1 | -1 | null;
 
+type Confirmacion =
+  | { tipo: "eliminar-post-propio" }
+  | { tipo: "eliminar-post-mod" }
+  | { tipo: "reportar-post" }
+  | { tipo: "eliminar-comment"; id: number }
+  | { tipo: "eliminar-comment-mod"; id: number }
+  | { tipo: "reportar-comment"; id: number };
+
+const TrashIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+  </svg>
+);
+
+function InlineConfirm({ label, onConfirm, onCancel }: { label: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <span className="foro-post-card__confirm">
+      <span>{label}</span>
+      <button className="foro-post-card__confirm-yes" onClick={onConfirm}>Sí</button>
+      <button className="foro-post-card__confirm-no" onClick={onCancel}>No</button>
+    </span>
+  );
+}
+
 export default function PostDetailPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -58,6 +82,13 @@ export default function PostDetailPage() {
   const [comentariosReportados, setComentariosReportados] = useState<Set<number>>(new Set());
   const [esMod, setEsMod] = useState(false);
   const [modSet, setModSet] = useState<Set<string>>(new Set());
+  const [confirmacion, setConfirmacion] = useState<Confirmacion | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(null), 4000);
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -92,7 +123,6 @@ export default function PostDetailPage() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
 
-    // Post
     const { data: postData } = await supabase
       .from("foro_post_summary")
       .select(`
@@ -107,11 +137,9 @@ export default function PostDetailPage() {
 
     if (postData) setPost(postData as unknown as Post);
 
-    // Comments
     const commentData = await fetchComments();
     setComments(commentData as Comment[]);
 
-    // Current user's vote + reports
     if (userId) {
       const [{ data: voteData }, { data: postReportData }, { data: commentReportData }] = await Promise.all([
         supabase.from("foro_vote").select("value").eq("post_id", postId).eq("auth_user_id", userId).maybeSingle(),
@@ -125,7 +153,6 @@ export default function PostDetailPage() {
       }
     }
 
-    // Author names (only for non-anonymous entries)
     if (postData) {
       const uids: string[] = [];
       if (!postData.anonimo) uids.push(postData.auth_user_id);
@@ -148,10 +175,8 @@ export default function PostDetailPage() {
   const handleVote = async (value: 1 | -1) => {
     if (!userId) return;
     const isUnvote = userVote === value;
-
     if (isUnvote) {
-      await supabase.from("foro_vote").delete()
-        .eq("post_id", postId).eq("auth_user_id", userId);
+      await supabase.from("foro_vote").delete().eq("post_id", postId).eq("auth_user_id", userId);
       setUserVote(null);
       setPost((p) => p ? { ...p, vote_score: p.vote_score - value } : p);
     } else {
@@ -167,96 +192,107 @@ export default function PostDetailPage() {
 
   const handleCommentSubmit = async () => {
     if (!userId || !newComment.trim()) return;
-
     const untrusted = findUntrustedUrls(newComment);
     if (untrusted.length > 0) {
       setCommentError(`Solo se permiten links de sitios conocidos (UTN, YouTube, GitHub, Wikipedia, etc.). Revisá: ${untrusted[0]}`);
       return;
     }
-
     setSubmitting(true);
     setCommentError("");
-
     const { error } = await supabase.from("foro_comment").insert({
       post_id: postId,
       auth_user_id: userId,
       contenido: newComment.trim(),
       anonimo: newCommentAnonimo,
     });
-
     if (error) {
       setCommentError("No se pudo enviar el comentario. Intentá de nuevo.");
       setSubmitting(false);
       return;
     }
-
     setNewComment("");
     const updatedComments = await fetchComments();
     setComments(updatedComments as Comment[]);
-
-    // Refresh author names if new non-anon comment
     if (!newCommentAnonimo) {
       const uids = [
         ...(post && !post.anonimo ? [post.auth_user_id] : []),
-        ...(updatedComments as Comment[])
-          .filter((c) => !c.anonimo)
-          .map((c) => c.auth_user_id)
-          .filter((uid, i, arr) => arr.indexOf(uid) === i),
+        ...(updatedComments as Comment[]).filter((c) => !c.anonimo).map((c) => c.auth_user_id).filter((u, i, arr) => arr.indexOf(u) === i),
       ];
       const names = await fetchAuthorNames(uids);
       setAuthorNames(names);
     }
-
     setPost((p) => p ? { ...p, comment_count: p.comment_count + 1 } : p);
     setSubmitting(false);
   };
 
-  const handleCommentDelete = async (commentId: number) => {
-    const confirmar = window.confirm("¿Eliminar este comentario?");
-    if (!confirmar) return;
-    await supabase.from("foro_comment").delete().eq("id", commentId).eq("auth_user_id", userId);
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
-    setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
+  const handleConfirmar = async (conf: Confirmacion) => {
+    setConfirmacion(null);
+    if (conf.tipo === "eliminar-post-propio") {
+      await supabase.from("foro_post").delete().eq("id", postId).eq("auth_user_id", userId);
+      router.push("/foro");
+    } else if (conf.tipo === "eliminar-post-mod") {
+      const result = await eliminarPostMod(postId);
+      if (result.error) { showError(result.error); return; }
+      router.push("/foro");
+    } else if (conf.tipo === "reportar-post") {
+      setReportandoPost(true);
+      const result = await reportarPost(postId);
+      setReportandoPost(false);
+      if (result.error) { showError(result.error); return; }
+      if (result.deleted) { router.push("/foro"); return; }
+      setPostReportado(true);
+    } else if (conf.tipo === "eliminar-comment") {
+      await supabase.from("foro_comment").delete().eq("id", conf.id).eq("auth_user_id", userId);
+      setComments((prev) => prev.filter((c) => c.id !== conf.id));
+      setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
+    } else if (conf.tipo === "eliminar-comment-mod") {
+      const result = await eliminarComentarioMod(conf.id);
+      if (result.error) { showError(result.error); return; }
+      setComments((prev) => prev.filter((c) => c.id !== conf.id));
+      setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
+    } else if (conf.tipo === "reportar-comment") {
+      const result = await reportarComentario(conf.id);
+      if (result.error) { showError(result.error); return; }
+      if (result.deleted) {
+        setComments((prev) => prev.filter((c) => c.id !== conf.id));
+        setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
+        return;
+      }
+      setComentariosReportados((prev) => new Set(prev).add(conf.id));
+    }
   };
 
   const handleReportarPost = async () => {
     if (postReportado) {
       setReportandoPost(true);
       const result = await quitarReportePost(postId);
-      if (result.error) { alert(result.error); setReportandoPost(false); return; }
-      setPostReportado(false);
       setReportandoPost(false);
+      if (result.error) { showError(result.error); return; }
+      setPostReportado(false);
       return;
     }
-    if (!window.confirm("¿Querés reportar esta publicación como contenido inapropiado?")) return;
-    setReportandoPost(true);
-    const result = await reportarPost(postId);
-    if (result.error) { alert(result.error); setReportandoPost(false); return; }
-    if (result.deleted) { alert("La publicación fue eliminada por acumular demasiados reportes."); router.push("/foro"); return; }
-    setPostReportado(true);
-    setReportandoPost(false);
+    setConfirmacion({ tipo: "reportar-post" });
   };
 
   const handleReportarComentario = async (comentarioId: number) => {
     if (comentariosReportados.has(comentarioId)) {
       const result = await quitarReporteComentario(comentarioId);
-      if (result.error) { alert(result.error); return; }
+      if (result.error) { showError(result.error); return; }
       setComentariosReportados((prev) => { const s = new Set(prev); s.delete(comentarioId); return s; });
       return;
     }
-    if (!window.confirm("¿Querés reportar este comentario como contenido inapropiado?")) return;
-    const result = await reportarComentario(comentarioId);
-    if (result.error) { alert(result.error); return; }
-    if (result.deleted) {
-      setComments((prev) => prev.filter((c) => c.id !== comentarioId));
-      setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
-      return;
-    }
-    setComentariosReportados((prev) => new Set(prev).add(comentarioId));
+    setConfirmacion({ tipo: "reportar-comment", id: comentarioId });
   };
 
   const displayName = (uid: string, isAnon: boolean) =>
     isAnon ? "Anónimo" : (authorNames[uid] ?? "usuario");
+
+  const isConfirming = (conf: Confirmacion) => {
+    if (!confirmacion) return false;
+    if (conf.tipo !== confirmacion.tipo) return false;
+    if ("id" in conf && "id" in confirmacion) return conf.id === confirmacion.id;
+    return true;
+  };
 
   if (loading) {
     return (
@@ -287,6 +323,10 @@ export default function PostDetailPage() {
           ← Volver al foro
         </button>
 
+        {errorMsg && (
+          <p className="foro-error-msg" role="alert">{errorMsg}</p>
+        )}
+
         {/* Post card */}
         <div className="foro-detail-card">
 
@@ -301,7 +341,11 @@ export default function PostDetailPage() {
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4l8 8H4z"/></svg>
             </button>
-            <span className={`foro-vote__score ${post.vote_score > 0 ? "foro-vote__score--positive" : post.vote_score < 0 ? "foro-vote__score--negative" : ""}`} aria-live="polite" aria-atomic="true">
+            <span
+              className={`foro-vote__score ${post.vote_score > 0 ? "foro-vote__score--positive" : post.vote_score < 0 ? "foro-vote__score--negative" : ""}`}
+              aria-live="polite"
+              aria-atomic="true"
+            >
               {post.vote_score}
             </span>
             <button
@@ -343,7 +387,7 @@ export default function PostDetailPage() {
 
             <div className="foro-detail__actions">
               <button className="foro-post-card__action-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
                 {post.comment_count} comentarios
@@ -352,45 +396,56 @@ export default function PostDetailPage() {
                 <span className="foro-detail__vote-hint">· Iniciá sesión para votar</span>
               )}
               {userId && post.auth_user_id !== userId && (
-                <button
-                  className="foro-post-card__action-btn"
-                  onClick={handleReportarPost}
-                  disabled={reportandoPost}
-                  style={{ marginLeft: "auto" }}
-                >
-                  {reportandoPost ? "..." : postReportado ? "⚑ Quitar reporte" : "⚑ Reportar"}
-                </button>
+                isConfirming({ tipo: "reportar-post" }) ? (
+                  <InlineConfirm
+                    label="¿Reportar?"
+                    onConfirm={() => handleConfirmar({ tipo: "reportar-post" })}
+                    onCancel={() => setConfirmacion(null)}
+                  />
+                ) : (
+                  <button
+                    className="foro-post-card__action-btn"
+                    onClick={handleReportarPost}
+                    disabled={reportandoPost}
+                    style={{ marginLeft: "auto" }}
+                  >
+                    {reportandoPost ? "..." : postReportado ? "⚑ Quitar reporte" : "⚑ Reportar"}
+                  </button>
+                )
               )}
               {userId && post.auth_user_id === userId && (
-                <button
-                  className="foro-post-card__action-btn foro-post-card__action-btn--danger"
-                  onClick={async () => {
-                    const ok = window.confirm("¿Eliminar esta publicación?");
-                    if (!ok) return;
-                    await supabase.from("foro_post").delete().eq("id", post.id).eq("auth_user_id", userId);
-                    router.push("/foro");
-                  }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
-                  </svg>
-                  Eliminar
-                </button>
+                isConfirming({ tipo: "eliminar-post-propio" }) ? (
+                  <InlineConfirm
+                    label="¿Eliminar publicación?"
+                    onConfirm={() => handleConfirmar({ tipo: "eliminar-post-propio" })}
+                    onCancel={() => setConfirmacion(null)}
+                  />
+                ) : (
+                  <button
+                    className="foro-post-card__action-btn foro-post-card__action-btn--danger"
+                    onClick={() => setConfirmacion({ tipo: "eliminar-post-propio" })}
+                  >
+                    <TrashIcon />
+                    Eliminar
+                  </button>
+                )
               )}
               {esMod && userId !== post.auth_user_id && (
-                <button
-                  className="foro-post-card__action-btn foro-post-card__action-btn--danger"
-                  onClick={async () => {
-                    if (!window.confirm("¿Eliminar esta publicación como moderador?")) return;
-                    const result = await eliminarPostMod(post.id);
-                    if (result.error) { alert(result.error); return; }
-                    router.push("/foro");
-                  }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
-                  </svg>
-                </button>
+                isConfirming({ tipo: "eliminar-post-mod" }) ? (
+                  <InlineConfirm
+                    label="¿Eliminar (mod)?"
+                    onConfirm={() => handleConfirmar({ tipo: "eliminar-post-mod" })}
+                    onCancel={() => setConfirmacion(null)}
+                  />
+                ) : (
+                  <button
+                    className="foro-post-card__action-btn foro-post-card__action-btn--danger"
+                    onClick={() => setConfirmacion({ tipo: "eliminar-post-mod" })}
+                    aria-label="Eliminar publicación (mod)"
+                  >
+                    <TrashIcon />
+                  </button>
+                )
               )}
             </div>
           </div>
@@ -415,32 +470,54 @@ export default function PostDetailPage() {
                       {new Date(c.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                     {userId && userId !== c.auth_user_id && (
-                      <button
-                        className="foro-comment-card__eliminar"
-                        onClick={() => handleReportarComentario(c.id)}
-                      >
-                        {comentariosReportados.has(c.id) ? "Quitar reporte" : "Reportar"}
-                      </button>
+                      isConfirming({ tipo: "reportar-comment", id: c.id }) ? (
+                        <InlineConfirm
+                          label="¿Reportar?"
+                          onConfirm={() => handleConfirmar({ tipo: "reportar-comment", id: c.id })}
+                          onCancel={() => setConfirmacion(null)}
+                        />
+                      ) : (
+                        <button
+                          className="foro-comment-card__eliminar"
+                          onClick={() => handleReportarComentario(c.id)}
+                        >
+                          {comentariosReportados.has(c.id) ? "Quitar reporte" : "Reportar"}
+                        </button>
+                      )
                     )}
                     {userId === c.auth_user_id && (
-                      <button className="foro-comment-card__eliminar" onClick={() => handleCommentDelete(c.id)}>
-                        Eliminar
-                      </button>
+                      isConfirming({ tipo: "eliminar-comment", id: c.id }) ? (
+                        <InlineConfirm
+                          label="¿Eliminar?"
+                          onConfirm={() => handleConfirmar({ tipo: "eliminar-comment", id: c.id })}
+                          onCancel={() => setConfirmacion(null)}
+                        />
+                      ) : (
+                        <button
+                          className="foro-comment-card__eliminar"
+                          onClick={() => setConfirmacion({ tipo: "eliminar-comment", id: c.id })}
+                        >
+                          Eliminar
+                        </button>
+                      )
                     )}
                     {esMod && userId !== c.auth_user_id && (
-                      <button
-                        className="foro-comment-card__eliminar"
-                        style={{ color: "#991b1b" }}
-                        onClick={async () => {
-                          if (!window.confirm("¿Eliminar este comentario como moderador?")) return;
-                          const result = await eliminarComentarioMod(c.id);
-                          if (result.error) { alert(result.error); return; }
-                          setComments((prev) => prev.filter((x) => x.id !== c.id));
-                          setPost((p) => p ? { ...p, comment_count: Math.max(0, p.comment_count - 1) } : p);
-                        }}
-                      >
-                        🗑
-                      </button>
+                      isConfirming({ tipo: "eliminar-comment-mod", id: c.id }) ? (
+                        <InlineConfirm
+                          label="¿Eliminar (mod)?"
+                          onConfirm={() => handleConfirmar({ tipo: "eliminar-comment-mod", id: c.id })}
+                          onCancel={() => setConfirmacion(null)}
+                        />
+                      ) : (
+                        <button
+                          className="foro-comment-card__eliminar"
+                          style={{ color: "#991b1b" }}
+                          onClick={() => setConfirmacion({ tipo: "eliminar-comment-mod", id: c.id })}
+                          aria-label="Eliminar comentario (mod)"
+                        >
+                          <TrashIcon />
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
@@ -474,7 +551,7 @@ export default function PostDetailPage() {
                     {submitting ? "Enviando..." : "Comentar"}
                   </button>
                 </div>
-                {commentError && <p style={{ color: "#991b1b", fontSize: 13 }}>{commentError}</p>}
+                {commentError && <p style={{ color: "#991b1b", fontSize: 13 }} role="alert">{commentError}</p>}
               </div>
             ) : (
               <p className="foro-login-hint">

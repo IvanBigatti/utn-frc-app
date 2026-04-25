@@ -19,6 +19,53 @@
   background: #fff;
 }
 
+@media (max-width: 768px) {
+  .progreso-page {
+    flex-direction: column;
+  }
+
+  .progreso-sidebar {
+    width: 100%;
+    min-width: unset;
+    height: auto;
+    position: static;
+    overflow-y: unset;
+    border-right: none;
+    border-bottom: 1px solid #e8e8e4;
+    padding: 24px 16px;
+  }
+
+  .progreso-stats {
+    padding: 24px 16px;
+    overflow-y: unset;
+  }
+
+  .progreso-tag-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .progreso-tag-block {
+    width: auto;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .progreso-sidebar {
+    padding: 16px;
+  }
+
+  .progreso-stats {
+    padding: 16px;
+  }
+
+  .progreso-nota-btns {
+    flex-wrap: wrap;
+  }
+}
+
 .progreso-sidebar__header {
   margin-bottom: 28px;
 }

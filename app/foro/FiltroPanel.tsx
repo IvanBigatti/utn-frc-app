@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/app/lib/supabase/client";
 
 type TipoPost = "Pregunta" | "Recurso" | "Debate" | "Aviso";
@@ -27,6 +27,9 @@ const TIPOS: TipoPost[] = ["Pregunta", "Recurso", "Debate", "Aviso"];
 const supabase = createClient();
 
 export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Props) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+
   const [ingenierias, setIngenierias] = useState<Item[]>([]);
   const [materias, setMaterias] = useState<Item[]>([]);
   const [comisiones, setComisiones] = useState<Item[]>([]);
@@ -83,16 +86,54 @@ export default function FiltroPanel({ isOpen, onClose, filtros, onChange }: Prop
     onClose();
   };
 
+  // Capture trigger on open; return focus on close
+  useEffect(() => {
+    if (isOpen) {
+      triggerRef.current = document.activeElement;
+    } else if (triggerRef.current instanceof HTMLElement) {
+      triggerRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Focus trap
+  const handleClose = useCallback(onClose, [onClose]);
+  useEffect(() => {
+    if (!isOpen || !panelRef.current) return;
+    const panel = panelRef.current;
+    const sel = 'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+    const focusable = Array.from(panel.querySelectorAll<HTMLElement>(sel));
+    if (focusable.length) focusable[0].focus();
+    const trap = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { handleClose(); return; }
+      if (e.key !== "Tab" || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    panel.addEventListener("keydown", trap);
+    return () => panel.removeEventListener("keydown", trap);
+  }, [isOpen, handleClose]);
+
   if (!isOpen) return null;
 
   return (
     <>
-      <div className="filtro-overlay" onClick={onClose} />
-      <div className="filtro-lateral">
+      <div className="filtro-overlay" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={panelRef}
+        className="filtro-lateral"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="filtro-panel-title"
+      >
 
         <div className="filtro-lateral__header">
-          <h3>Filtrar publicaciones</h3>
-          <button className="filtro-panel__close" onClick={onClose}>✕</button>
+          <h3 id="filtro-panel-title">Filtrar publicaciones</h3>
+          <button className="filtro-panel__close" onClick={onClose} aria-label="Cerrar filtros">✕</button>
         </div>
 
         <div className="filtro-lateral__body">

@@ -7,13 +7,15 @@ export default async function Navbar() {
   const { data: { user } } = await supabase.auth.getUser()
 
   let avatarKey: string | null = null
+  let avatarSrc: string | null = null
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('avatar_key')
+      .select('avatar_key, avatar_src')
       .eq('id', user.id)
       .maybeSingle()
     avatarKey = profile?.avatar_key ?? null
+    avatarSrc = profile?.avatar_src ?? null
   }
 
   return (
@@ -24,7 +26,7 @@ export default async function Navbar() {
           <span className="text-xl font-bold text-gray-900 tracking-tight">TUTN</span>
         </Link>
 
-        <NavMenu email={user?.email ?? null} avatarKey={avatarKey} />
+        <NavMenu email={user?.email ?? null} avatarKey={avatarKey} avatarSrc={avatarSrc} />
 
       </div>
     </nav>
