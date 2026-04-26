@@ -34,9 +34,7 @@ export async function DELETE(req: Request) {
     try {
       await deleteFromDrive(archivo.drive_file_id)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error('[delete-archivo] Error al eliminar de Drive:', msg)
-      return Response.json({ error: `No se pudo eliminar el archivo de Drive: ${msg}` }, { status: 500 })
+      console.error('[delete-archivo] Error al eliminar de Drive:', err instanceof Error ? err.message : err)
     }
   }
 
