@@ -62,23 +62,91 @@ export default function UploadForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!file || !materiaId || !nombre.trim()) return
-    setUploading(true); setError(''); setProgress(30)
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('nombre', nombre.trim())
-    formData.append('tipo', tipo)
-    formData.append('materia_id', String(materiaId))
-    formData.append('ingenieria_id', String(carreraId))
-    if (descripcion.trim()) formData.append('descripcion', descripcion.trim())
-    setProgress(60)
+    setUploading(true)
+    setError('')
+    setProgress(10)
+
+    // Paso 1: obtener session URI de Google Drive
+    let sessionUri: string
     try {
-      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const res = await fetch('/api/upload/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          mimeType: file.type,
+          fileSize: file.size,
+          nombre: nombre.trim(),
+          tipo,
+          materia_id: String(materiaId),
+          ingenieria_id: carreraId ? String(carreraId) : undefined,
+          descripcion: descripcion.trim() || undefined,
+        }),
+      })
       const json = await res.json()
-      if (!res.ok) { setError(json.error || 'Error al subir el archivo'); setUploading(false); setProgress(0); return }
+      if (!res.ok) { setError(json.error || 'Error al iniciar la subida'); setUploading(false); setProgress(0); return }
+      sessionUri = json.sessionUri
+      setProgress(25)
+    } catch {
+      setError('Error de conexión. Intentá de nuevo.'); setUploading(false); setProgress(0); return
+    }
+
+    // Paso 2: subir archivo directo a Google Drive (bypass Vercel)
+    let fileId: string
+    try {
+      fileId = await new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setProgress(25 + Math.round((event.loaded / event.total) * 60))
+          }
+        }
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText)
+              if (data.id) resolve(data.id)
+              else reject(new Error('Google Drive no devolvió el ID del archivo'))
+            } catch {
+              reject(new Error('Respuesta inesperada de Google Drive'))
+            }
+          } else {
+            reject(new Error(`Error al subir a Drive: ${xhr.status}`))
+          }
+        }
+        xhr.onerror = () => reject(new Error('Error de red al subir el archivo'))
+        xhr.ontimeout = () => reject(new Error('Tiempo de espera agotado'))
+        xhr.open('PUT', sessionUri)
+        xhr.setRequestHeader('Content-Type', file.type)
+        xhr.send(file)
+      })
+      setProgress(85)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al subir el archivo')
+      setUploading(false); setProgress(0); return
+    }
+
+    // Paso 3: guardar metadata en Supabase
+    try {
+      const res = await fetch('/api/upload/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileId,
+          nombre: nombre.trim(),
+          tipo,
+          materia_id: String(materiaId),
+          ingenieria_id: carreraId ? String(carreraId) : undefined,
+          descripcion: descripcion.trim() || undefined,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setError(json.error || 'Error al guardar el archivo'); setUploading(false); setProgress(0); return }
       setProgress(100); setSuccess(true)
       setTimeout(() => router.push(`/resultados?materia_id=${materiaId}`), 1500)
     } catch {
-      setError('Error de conexión. Intentá de nuevo.'); setUploading(false); setProgress(0)
+      setError('Error de conexión al guardar. El archivo puede haberse subido a Drive.')
+      setUploading(false); setProgress(0)
     }
   }
 
@@ -239,7 +307,7 @@ export default function UploadForm() {
             <div className="upload-progress__bar" style={{ transform: `scaleX(${progress / 100})` }} />
           </div>
           <p className="upload-scanning-notice">
-            Analizando el archivo por seguridad, esto puede tardar unos segundos...
+            Subiendo archivo, aguardá un momento...
           </p>
         </div>
       )}
