@@ -8,14 +8,15 @@ export default async function Navbar() {
 
   let avatarKey: string | null = null
   let avatarSrc: string | null = null
+  let isMod = false
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('avatar_key, avatar_src')
-      .eq('id', user.id)
-      .maybeSingle()
-    avatarKey = profile?.avatar_key ?? null
-    avatarSrc = profile?.avatar_src ?? null
+    const [profileRes, modRes] = await Promise.all([
+      supabase.from('profiles').select('avatar_key, avatar_src').eq('id', user.id).maybeSingle(),
+      supabase.from('moderadores').select('user_id').eq('user_id', user.id).maybeSingle(),
+    ])
+    avatarKey = profileRes.data?.avatar_key ?? null
+    avatarSrc = profileRes.data?.avatar_src ?? null
+    isMod = !!modRes.data
   }
 
   return (
@@ -26,7 +27,7 @@ export default async function Navbar() {
           <span className="text-xl font-bold text-gray-900 tracking-tight">TUTN</span>
         </Link>
 
-        <NavMenu email={user?.email ?? null} avatarKey={avatarKey} avatarSrc={avatarSrc} />
+        <NavMenu email={user?.email ?? null} avatarKey={avatarKey} avatarSrc={avatarSrc} isMod={isMod} />
 
       </div>
     </nav>

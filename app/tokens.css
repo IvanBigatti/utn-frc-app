@@ -32,6 +32,7 @@
   /* ── Status ────────────────────────────────────────────────────────── */
   --color-danger:        #e05555;   /* Rojo Parcial — errors and destructive actions */
   --color-success:       #5a9e6f;   /* Verde Aprobado — confirmation states */
+  --color-mod:           #6e40c9;   /* Moderator badge — static, never reused as accent */
 
   /* ── Accessibility ─────────────────────────────────────────────────── */
   --color-focus:         #2563eb;   /* Focus ring — WCAG AA contrast, not a brand color */

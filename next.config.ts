@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
   experimental: {
     proxyClientMaxBodySize: '25mb',
@@ -20,8 +22,8 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js requires unsafe-inline for hydration scripts; unsafe-eval for dev HMR
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // Next.js requires unsafe-inline for hydration; unsafe-eval only in dev for HMR
+              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: *.supabase.co *.google.com *.googleusercontent.com lh3.googleusercontent.com api.dicebear.com avatars.githubusercontent.com github.com",
               "font-src 'self'",

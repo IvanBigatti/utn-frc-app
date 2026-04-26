@@ -120,8 +120,8 @@ export default function PrivacidadPage() {
           </ul>
           <p>
             Para ejercer cualquiera de estos derechos, contactanos en{' '}
-            <a href="mailto:ivanbigatti@gmail.com">ivanbigatti@gmail.com</a>. Responderemos en
-            un plazo máximo de 5 días hábiles.
+            <a href="mailto:ivanbigatti@gmail.com">ivanbigatti@gmail.com</a>,o a{' '}
+            <a href="mailto:adolfope04@gmail.com">adolfope04@gmail.com</a>. 
           </p>
           <p>
             La Dirección Nacional de Protección de Datos Personales es el organismo de control
@@ -136,7 +136,8 @@ export default function PrivacidadPage() {
             en tránsito (HTTPS), almacenamiento seguro de contraseñas mediante hash, y control de
             acceso basado en roles. Sin embargo, ningún sistema es 100% seguro — si detectás una
             vulnerabilidad, reportála en{' '}
-            <a href="mailto:ivanbigatti@gmail.com">ivanbigatti@gmail.com</a>.
+            <a href="mailto:ivanbigatti@gmail.com">ivanbigatti@gmail.com</a>, o a{' '}
+            <a href="mailto:adolfope04@gmail.com">adolfope04@gmail.com</a>.
           </p>
         </section>
 
@@ -153,7 +154,8 @@ export default function PrivacidadPage() {
           <h2>10. Contacto</h2>
           <p>
             Para cualquier consulta sobre privacidad o para ejercer tus derechos, escribinos a{' '}
-            <a href="mailto:ivanbigatti@gmail.com">ivanbigatti@gmail.com</a>.
+            <a href="mailto:ivanbigatti@gmail.com">ivanbigatti@gmail.com</a>, o a{' '}
+            <a href="mailto:adolfope04@gmail.com">adolfope04@gmail.com</a>.
           </p>
         </section>
 

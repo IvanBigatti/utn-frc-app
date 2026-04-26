@@ -102,7 +102,8 @@ export default function TerminosPage() {
           <h2>9. Contacto</h2>
           <p>
             Para consultas sobre estos términos, escribinos a{' '}
-            <a href="mailto:ivanbigatti@gmail.com">ivanbigatti@gmail.com</a>.
+            <a href="mailto:ivanbigatti@gmail.com">ivanbigatti@gmail.com</a>, o a{' '}
+            <a href="mailto:adolfope04@gmail.com">adolfope04@gmail.com</a>.
           </p>
         </section>
 

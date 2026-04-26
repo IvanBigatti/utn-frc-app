@@ -424,3 +424,107 @@
   height: 18px;
   transition: opacity 0.3s;
 }
+
+/* ── Username editor ──────────────────────────────── */
+.perfil-username-editor {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perfil-username-editor__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.perfil-username-editor__input {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: #f9fafb;
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+
+.perfil-username-editor__input:focus {
+  border-color: var(--color-primary);
+  background: #fff;
+}
+
+.perfil-username-editor__btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.perfil-username-editor__btn:hover {
+  opacity: 0.85;
+}
+
+.perfil-username-editor__hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.perfil-username-editor__error {
+  font-size: 12px;
+  color: var(--color-danger, #ef4444);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ── Zona peligrosa ───────────────────────────────── */
+.perfil-danger-zone {
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.perfil-danger-zone__title {
+  color: #ef4444 !important;
+}
+
+.perfil-danger-zone__desc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  margin: 0 0 16px;
+}
+
+.perfil-danger-zone__btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: transparent;
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.perfil-danger-zone__btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}

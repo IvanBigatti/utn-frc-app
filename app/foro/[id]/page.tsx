@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/client";
 import { findUntrustedUrls } from "@/app/lib/contentSecurity";
 import { reportarPost, reportarComentario, quitarReportePost, quitarReporteComentario } from "@/app/actions/reportar";
-import { eliminarPostMod, eliminarComentarioMod } from "@/app/actions/moderador";
+import Link from "next/link";
+import { eliminarPostMod, eliminarComentarioMod, banearUsuario } from "@/app/actions/moderador";
 import "../foro.css";
 
 type TipoPost = "Pregunta" | "Recurso" | "Debate" | "Aviso";
@@ -84,10 +85,24 @@ export default function PostDetailPage() {
   const [modSet, setModSet] = useState<Set<string>>(new Set());
   const [confirmacion, setConfirmacion] = useState<Confirmacion | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [voting, setVoting] = useState(false);
+  const votingRef = useRef(false);
+  const [baneando, setBaneando] = useState<string | null>(null);
+  const [banReason, setBanReason] = useState("");
 
   const showError = (msg: string) => {
     setErrorMsg(msg);
     setTimeout(() => setErrorMsg(null), 4000);
+  };
+
+  const handleBanear = async (uid: string) => {
+    setBaneando(null);
+    const result = await banearUsuario(uid, banReason);
+    setBanReason("");
+    if (result.error) { showError(result.error); return; }
+    setPost((p) => p?.auth_user_id === uid ? null : p);
+    setComments((prev) => prev.filter((c) => c.auth_user_id !== uid));
+    if (post?.auth_user_id === uid) router.push("/foro");
   };
 
   useEffect(() => {
@@ -112,10 +127,10 @@ export default function PostDetailPage() {
 
   const fetchAuthorNames = useCallback(async (uids: string[]) => {
     if (!uids.length) return {};
-    const { data } = await supabase.rpc("get_user_emails", { user_ids: uids });
+    const { data } = await supabase.rpc("get_user_display_names", { user_ids: uids });
     const map: Record<string, string> = {};
-    (data ?? []).forEach((row: { id: string; email: string }) => {
-      map[row.id] = row.email.split("@")[0];
+    (data ?? []).forEach((row: { id: string; display_name: string }) => {
+      map[row.id] = row.display_name;
     });
     return map;
   }, []);
@@ -173,21 +188,37 @@ export default function PostDetailPage() {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const handleVote = async (value: 1 | -1) => {
-    if (!userId) return;
-    const isUnvote = userVote === value;
+    if (!userId || votingRef.current) return;
+    votingRef.current = true;
+    setVoting(true);
+
+    const prev = userVote;
+    const isUnvote = prev === value;
+
     if (isUnvote) {
-      await supabase.from("foro_vote").delete().eq("post_id", postId).eq("auth_user_id", userId);
       setUserVote(null);
       setPost((p) => p ? { ...p, vote_score: p.vote_score - value } : p);
+      const { error } = await supabase.from("foro_vote").delete().eq("post_id", postId).eq("auth_user_id", userId);
+      if (error) {
+        setUserVote(prev);
+        setPost((p) => p ? { ...p, vote_score: p.vote_score + value } : p);
+      }
     } else {
-      const delta = value - (userVote ?? 0);
-      await supabase.from("foro_vote").upsert(
+      const delta = value - (prev ?? 0);
+      setUserVote(value);
+      setPost((p) => p ? { ...p, vote_score: p.vote_score + delta } : p);
+      const { error } = await supabase.from("foro_vote").upsert(
         { post_id: postId, auth_user_id: userId, value },
         { onConflict: "post_id,auth_user_id" }
       );
-      setUserVote(value);
-      setPost((p) => p ? { ...p, vote_score: p.vote_score + delta } : p);
+      if (error) {
+        setUserVote(prev);
+        setPost((p) => p ? { ...p, vote_score: p.vote_score - delta } : p);
+      }
     }
+
+    votingRef.current = false;
+    setVoting(false);
   };
 
   const handleCommentSubmit = async () => {
@@ -335,7 +366,7 @@ export default function PostDetailPage() {
             <button
               className={`foro-vote__btn foro-vote__btn--up ${userVote === 1 ? "active" : ""}`}
               onClick={() => handleVote(1)}
-              disabled={!userId}
+              disabled={!userId || voting}
               aria-label={userId ? `Votar positivo (puntaje actual: ${post.vote_score})` : "Iniciá sesión para votar"}
               aria-pressed={userVote === 1}
             >
@@ -351,7 +382,7 @@ export default function PostDetailPage() {
             <button
               className={`foro-vote__btn foro-vote__btn--down ${userVote === -1 ? "active" : ""}`}
               onClick={() => handleVote(-1)}
-              disabled={!userId}
+              disabled={!userId || voting}
               aria-label={userId ? `Votar negativo (puntaje actual: ${post.vote_score})` : "Iniciá sesión para votar"}
               aria-pressed={userVote === -1}
             >
@@ -377,7 +408,16 @@ export default function PostDetailPage() {
                 <span className="foro-post-card__comision">· Com. {post.comision.nombre}</span>
               )}
               <span className="foro-post-card__sep">·</span>
-              <span>publicado por <strong>{displayName(post.auth_user_id, post.anonimo)}</strong>{!post.anonimo && modSet.has(post.auth_user_id) && <span className="mod-badge">Mod</span>}</span>
+              <span>publicado por{' '}
+                {!post.anonimo ? (
+                  <Link href={`/perfil?uid=${post.auth_user_id}`} className="foro-post-card__author--link" style={{ fontWeight: 600 }}>
+                    {displayName(post.auth_user_id, post.anonimo)}
+                    {modSet.has(post.auth_user_id) && <span className="mod-badge">Mod</span>}
+                  </Link>
+                ) : (
+                  <strong>{displayName(post.auth_user_id, post.anonimo)}</strong>
+                )}
+              </span>
               <span className="foro-post-card__sep">·</span>
               <span>{new Date(post.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}</span>
             </div>
@@ -447,6 +487,32 @@ export default function PostDetailPage() {
                   </button>
                 )
               )}
+              {esMod && userId !== post.auth_user_id && (
+                baneando === post.auth_user_id ? (
+                  <span className="foro-post-card__confirm">
+                    <input
+                      type="text"
+                      className="foro-post-card__ban-input"
+                      placeholder="Motivo..."
+                      value={banReason}
+                      onChange={(e) => setBanReason(e.target.value)}
+                      autoFocus
+                    />
+                    <button className="foro-post-card__confirm-yes" onClick={() => handleBanear(post.auth_user_id)}>Banear</button>
+                    <button className="foro-post-card__confirm-no" onClick={() => { setBaneando(null); setBanReason(""); }}>No</button>
+                  </span>
+                ) : (
+                  <button
+                    className="foro-post-card__action-btn foro-post-card__action-btn--ban"
+                    onClick={() => { setBaneando(post.auth_user_id); setConfirmacion(null); }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                    Banear
+                  </button>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -462,8 +528,14 @@ export default function PostDetailPage() {
               <div key={c.id} className="foro-comment-card">
                 <div className="foro-comment-card__header">
                   <span className="foro-comment-card__author">
-                    {displayName(c.auth_user_id, c.anonimo)}
-                    {!c.anonimo && modSet.has(c.auth_user_id) && <span className="mod-badge">Mod</span>}
+                    {!c.anonimo ? (
+                      <Link href={`/perfil?uid=${c.auth_user_id}`} className="foro-post-card__author--link">
+                        {displayName(c.auth_user_id, c.anonimo)}
+                        {modSet.has(c.auth_user_id) && <span className="mod-badge">Mod</span>}
+                      </Link>
+                    ) : (
+                      <>{displayName(c.auth_user_id, c.anonimo)}</>
+                    )}
                   </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span className="foro-comment-card__fecha">
@@ -516,6 +588,33 @@ export default function PostDetailPage() {
                           aria-label="Eliminar comentario (mod)"
                         >
                           <TrashIcon />
+                        </button>
+                      )
+                    )}
+                    {esMod && userId !== c.auth_user_id && (
+                      baneando === c.auth_user_id ? (
+                        <span className="foro-post-card__confirm">
+                          <input
+                            type="text"
+                            className="foro-post-card__ban-input"
+                            placeholder="Motivo..."
+                            value={banReason}
+                            onChange={(e) => setBanReason(e.target.value)}
+                            autoFocus
+                          />
+                          <button className="foro-post-card__confirm-yes" onClick={() => handleBanear(c.auth_user_id)}>Banear</button>
+                          <button className="foro-post-card__confirm-no" onClick={() => { setBaneando(null); setBanReason(""); }}>No</button>
+                        </span>
+                      ) : (
+                        <button
+                          className="foro-comment-card__eliminar foro-post-card__action-btn--ban"
+                          style={{ color: "#b45309" }}
+                          onClick={() => { setBaneando(c.auth_user_id); setConfirmacion(null); }}
+                          aria-label="Banear autor del comentario"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                          </svg>
                         </button>
                       )
                     )}

@@ -17,7 +17,7 @@ export default function FloatingUploadButton() {
 
       {/* Botón secundario: "Subir material" */}
       <div
-        className={`flex flex-col items-center gap-1 transition-all duration-300 ease-out ${
+        className={`flex flex-col items-center gap-1 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           open
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-4 pointer-events-none'
@@ -26,7 +26,7 @@ export default function FloatingUploadButton() {
         <Link
           href="/upload"
           onClick={() => setOpen(false)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-lg transition-colors whitespace-nowrap"
+          className="flex items-center gap-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-lg transition-colors whitespace-nowrap"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12l-4 4m4-4l4 4" />
@@ -34,15 +34,15 @@ export default function FloatingUploadButton() {
           Subir material
         </Link>
         {/* Flecha indicadora */}
-        <div className="w-0.5 h-3 bg-blue-400 rounded-full" />
+        <div className="w-0.5 h-3 bg-[var(--color-primary-light)] rounded-full" />
       </div>
 
       {/* Botón principal: + */}
       <button
         onClick={() => setOpen(o => !o)}
         aria-label={open ? 'Cerrar' : 'Agregar material'}
-        className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-300 ${
-          open ? 'rotate-45 bg-blue-700' : 'rotate-0'
+        className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white shadow-xl flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-4 focus:ring-[var(--color-primary-light)] active:scale-90 ${
+          open ? 'rotate-45 bg-[var(--color-primary-dark)]' : 'rotate-0'
         }`}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 sm:w-7 sm:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

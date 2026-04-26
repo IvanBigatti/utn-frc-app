@@ -11,7 +11,7 @@ export default async function ResultadosPage({ searchParams }: { searchParams: S
     return (
       <main className="max-w-4xl mx-auto px-4 py-10 text-center">
         <p className="text-gray-500">Usá el buscador para encontrar material.</p>
-        <Link href="/" className="mt-4 inline-block text-blue-600 hover:underline text-sm">
+        <Link href="/" className="mt-4 inline-block text-[var(--color-primary)] hover:underline text-sm">
           Ir al inicio
         </Link>
       </main>
@@ -43,10 +43,10 @@ export default async function ResultadosPage({ searchParams }: { searchParams: S
   return (
     <main className="max-w-4xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <Link href="/" className="text-sm text-blue-600 hover:text-blue-800 dark:hover:text-blue-400">
+        <Link href="/" className="text-sm text-[var(--color-primary)] hover:underline">
           ← Volver a buscar
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{materiaNombre}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mt-2">{materiaNombre}</h1>
         <p className="text-sm text-gray-500 mt-1">
           {archivos?.length ?? 0} archivo{archivos?.length !== 1 ? 's' : ''} disponible{archivos?.length !== 1 ? 's' : ''}
         </p>

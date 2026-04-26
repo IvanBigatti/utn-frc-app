@@ -1,0 +1,348 @@
+.mod-loading {
+  text-align: center;
+  padding: 80px 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.mod-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 16px 60px;
+}
+
+.mod-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.mod-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ── Resumen ──────────────────────────────────────── */
+.mod-summary {
+  display: flex;
+  gap: 12px;
+}
+
+.mod-summary__card {
+  flex: 1;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mod-summary__num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.mod-summary__label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Section ──────────────────────────────────────── */
+.mod-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mod-section__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* ── Card ─────────────────────────────────────────── */
+.mod-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mod-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mod-card__author {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.mod-card__date {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.mod-card__reports {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 12px;
+}
+
+.mod-card__reports--low {
+  background: rgba(234, 179, 8, 0.15);
+  color: #ca8a04;
+}
+
+.mod-card__reports--high {
+  background: rgba(224, 85, 85, 0.12);
+  color: var(--color-danger);
+}
+
+.mod-card__view-link {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.mod-card__view-link:hover {
+  text-decoration: underline;
+}
+
+.mod-card__titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.mod-card__content {
+  font-size: 13px;
+  color: var(--color-text-meta);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mod-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* ── Buttons ──────────────────────────────────────── */
+.mod-btn {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, background 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.mod-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mod-btn--delete {
+  background: rgba(224, 85, 85, 0.1);
+  color: var(--color-danger);
+}
+
+.mod-btn--delete:hover {
+  background: rgba(224, 85, 85, 0.18);
+}
+
+.mod-btn--ban {
+  background: rgba(180, 83, 9, 0.1);
+  color: #b45309;
+}
+
+.mod-btn--ban:hover {
+  background: rgba(180, 83, 9, 0.18);
+}
+
+.mod-btn--ban-confirm {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.mod-btn--ban-confirm:hover {
+  opacity: 0.85;
+}
+
+.mod-btn--cancel {
+  background: var(--color-border);
+  color: var(--color-text-meta);
+}
+
+.mod-btn--cancel:hover {
+  opacity: 0.75;
+}
+
+.mod-btn--view {
+  background: rgba(31, 56, 126, 0.08);
+  color: var(--color-primary);
+}
+
+.mod-btn--view:hover {
+  background: rgba(31, 56, 126, 0.14);
+}
+
+/* ── Inline ban form ──────────────────────────────── */
+.mod-ban-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mod-ban-input {
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  width: 180px;
+  transition: border-color 0.15s;
+}
+
+.mod-ban-input:focus {
+  border-color: var(--color-primary);
+}
+
+/* ── Empty state ──────────────────────────────────── */
+.mod-empty {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.mod-empty--hero {
+  text-align: center;
+  padding: 24px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+/* ── Search ───────────────────────────────────────── */
+.mod-search {
+  display: flex;
+  gap: 8px;
+}
+
+.mod-search__input {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  color: var(--color-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.mod-search__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.mod-search__input:focus {
+  border-color: var(--color-primary);
+}
+
+.mod-search__btn {
+  padding: 9px 16px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.mod-search__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mod-search__btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+/* ── User list ────────────────────────────────────── */
+.mod-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.mod-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.mod-user-row__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mod-user-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.mod-user-row__email {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.mod-user-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}

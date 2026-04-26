@@ -1,3 +1,19 @@
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 14px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
 /* ── Overlay ─────────────────────────────────────── */
 .overlay {
   position: fixed;
@@ -5,6 +21,7 @@
   background-color: rgba(0, 0, 0, 0.45);
   z-index: 100;
   backdrop-filter: blur(2px);
+  animation: overlay-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ── Modal panel ─────────────────────────────────── */
@@ -25,6 +42,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  animation: modal-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ── Header ──────────────────────────────────────── */
@@ -101,8 +119,9 @@
   color: var(--color-primary);
   cursor: pointer;
   overflow: hidden;
-  transition: border-color 0.3s cubic-bezier(0.23, 1, 0.32, 1),
-              background-color 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
   font-family: inherit;
 }

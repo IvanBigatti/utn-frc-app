@@ -4,7 +4,7 @@
 
 /* ── Página ──────────────────────────────────────── */
 .foro-page {
-  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #e2e0e0 80%);
+  background: var(--color-surface);
   min-height: 100vh;
   padding: 20px 0 60px;
 }
@@ -96,7 +96,8 @@
   font-weight: 700;
   color: #878a8c;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.18s cubic-bezier(0.16, 1, 0.3, 1), color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 44px;
 }
 
 .foro-sort__btn:hover {
@@ -289,6 +290,38 @@
   color: #991b1b;
 }
 
+.foro-post-card__action-btn--ban {
+  color: #b45309;
+}
+
+.foro-post-card__action-btn--ban:hover {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.foro-post-card__ban-input {
+  padding: 3px 7px;
+  border-radius: 5px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  color: var(--color-text);
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  width: 120px;
+}
+
+.foro-post-card__author--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.foro-post-card__author--link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ── Vote widget ─────────────────────────────────── */
 .foro-vote {
   display: flex;
@@ -308,9 +341,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.1s, background 0.1s;
+  transition: color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
   font-size: 14px;
   line-height: 1;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.foro-post-card__vote .foro-vote__btn:active:not(:disabled),
+.foro-vote--vertical .foro-vote__btn:active:not(:disabled) {
+  transform: scale(0.8);
 }
 
 .foro-post-card__vote .foro-vote__btn:hover,
@@ -320,16 +362,16 @@
 
 .foro-post-card__vote .foro-vote__btn--up:hover,
 .foro-vote--vertical .foro-vote__btn--up:hover {
-  color: #7193ff;
+  color: var(--color-primary);
 }
 
 .foro-post-card__vote .foro-vote__btn--down:hover,
 .foro-vote--vertical .foro-vote__btn--down:hover {
-  color: #ff4500;
+  color: var(--color-danger);
 }
 
-.foro-vote__btn--up.active   { color: #7193ff !important; }
-.foro-vote__btn--down.active { color: #ff0000 !important; }
+.foro-vote__btn--up.active   { color: var(--color-primary) !important; }
+.foro-vote__btn--down.active { color: var(--color-danger) !important; }
 
 .foro-vote__btn:disabled {
   opacity: 0.4;
@@ -344,8 +386,8 @@
   min-width: 20px;
 }
 
-.foro-vote__score--positive { color: #7193ff; }
-.foro-vote__score--negative { color: #ff0000; }
+.foro-vote__score--positive { color: var(--color-primary); }
+.foro-vote__score--negative { color: var(--color-danger); }
 
 /* Vertical vote (en detail page) */
 .foro-vote--vertical {
@@ -664,7 +706,7 @@
    POST DETAIL PAGE
    ══════════════════════════════════════════════════ */
 .foro-detail-page {
-  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #e2e0e0 80%);
+  background: var(--color-surface);
   min-height: 100vh;
   padding: 20px 0 60px;
 }
@@ -791,17 +833,19 @@
 }
 
 .foro-comment-card {
-  padding: 10px 0 10px 12px;
-  border-left: 2px solid var(--color-border);
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
   margin-left: 4px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   margin-bottom: 10px;
+  background: var(--color-surface);
 }
 
 .foro-comment-card:hover {
-  border-left-color: var(--color-primary);
+  border-color: var(--color-primary-ghost);
 }
 
 .foro-comment-card__header {
