@@ -2,7 +2,7 @@ import 'server-only'
 import { google } from 'googleapis'
 import { Readable } from 'stream'
 
-function getDriveClient() {
+function getOAuth2Client() {
   const clientId     = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
@@ -13,8 +13,68 @@ function getDriveClient() {
 
   const oauth2Client = new google.auth.OAuth2(clientId, clientSecret)
   oauth2Client.setCredentials({ refresh_token: refreshToken })
+  return oauth2Client
+}
 
-  return google.drive({ version: 'v3', auth: oauth2Client })
+function getDriveClient() {
+  return google.drive({ version: 'v3', auth: getOAuth2Client() })
+}
+
+export async function createUploadSession(
+  fileName: string,
+  mimeType: string,
+  fileSize: number
+): Promise<string> {
+  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID
+  if (!folderId) throw new Error('GOOGLE_DRIVE_FOLDER_ID no está definida')
+
+  const oauth2Client = getOAuth2Client()
+  const tokenResponse = await oauth2Client.getAccessToken()
+  const accessToken = tokenResponse.token
+  if (!accessToken) throw new Error('No se pudo obtener el access token de Google')
+
+  const response = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Upload-Content-Type': mimeType,
+        'X-Upload-Content-Length': String(fileSize),
+      },
+      body: JSON.stringify({
+        name: fileName,
+        parents: [folderId],
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Google Drive rechazó la sesión de subida: ${response.status} ${text}`)
+  }
+
+  const sessionUri = response.headers.get('location')
+  if (!sessionUri) throw new Error('Google Drive no devolvió el header Location')
+
+  return sessionUri
+}
+
+export async function verifyDriveFile(fileId: string): Promise<void> {
+  const drive = getDriveClient()
+  await drive.files.get({ fileId, fields: 'id' })
+}
+
+export async function makeFilePublic(fileId: string): Promise<void> {
+  const drive = getDriveClient()
+  await drive.permissions.create({
+    fileId,
+    requestBody: {
+      role: 'reader',
+      type: 'anyone',
+    },
+  })
 }
 
 export async function uploadToDrive(
@@ -43,14 +103,7 @@ export async function uploadToDrive(
   const fileId = response.data.id
   if (!fileId) throw new Error('No se pudo obtener el ID del archivo de Drive')
 
-  // Hacer el archivo público (anyone with link can view)
-  await drive.permissions.create({
-    fileId,
-    requestBody: {
-      role: 'reader',
-      type: 'anyone',
-    },
-  })
+  await makeFilePublic(fileId)
 
   return fileId
 }
