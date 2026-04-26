@@ -66,8 +66,10 @@ export default function UploadForm() {
     setError('')
     setProgress(10)
 
-    // Paso 1: obtener session URI de Google Drive
-    let sessionUri: string
+    // Paso 1: obtener signed URL de Supabase Storage
+    let signedUrl: string
+    let filePath: string
+    let mimeType: string
     try {
       const res = await fetch('/api/upload/initiate', {
         method: 'POST',
@@ -85,16 +87,17 @@ export default function UploadForm() {
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error || 'Error al iniciar la subida'); setUploading(false); setProgress(0); return }
-      sessionUri = json.sessionUri
+      signedUrl = json.signedUrl
+      filePath = json.filePath
+      mimeType = json.mimeType
       setProgress(25)
     } catch {
       setError('Error de conexión. Intentá de nuevo.'); setUploading(false); setProgress(0); return
     }
 
-    // Paso 2: subir archivo directo a Google Drive (bypass Vercel)
-    let fileId: string
+    // Paso 2: subir archivo directo a Supabase Storage (bypass Vercel)
     try {
-      fileId = await new Promise<string>((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
@@ -102,22 +105,13 @@ export default function UploadForm() {
           }
         }
         xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const data = JSON.parse(xhr.responseText)
-              if (data.id) resolve(data.id)
-              else reject(new Error('Google Drive no devolvió el ID del archivo'))
-            } catch {
-              reject(new Error('Respuesta inesperada de Google Drive'))
-            }
-          } else {
-            reject(new Error(`Error al subir a Drive: ${xhr.status}`))
-          }
+          if (xhr.status >= 200 && xhr.status < 300) resolve()
+          else reject(new Error(`Error al subir el archivo: ${xhr.status}`))
         }
         xhr.onerror = () => reject(new Error('Error de red al subir el archivo'))
         xhr.ontimeout = () => reject(new Error('Tiempo de espera agotado'))
-        xhr.open('PUT', sessionUri)
-        xhr.setRequestHeader('Content-Type', file.type)
+        xhr.open('PUT', signedUrl)
+        xhr.setRequestHeader('Content-Type', mimeType)
         xhr.send(file)
       })
       setProgress(85)
@@ -126,13 +120,14 @@ export default function UploadForm() {
       setUploading(false); setProgress(0); return
     }
 
-    // Paso 3: guardar metadata en Supabase
+    // Paso 3: el servidor descarga de Supabase, sube a Drive y guarda en DB
     try {
       const res = await fetch('/api/upload/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fileId,
+          filePath,
+          mimeType,
           nombre: nombre.trim(),
           tipo,
           materia_id: String(materiaId),
@@ -145,7 +140,7 @@ export default function UploadForm() {
       setProgress(100); setSuccess(true)
       setTimeout(() => router.push(`/resultados?materia_id=${materiaId}`), 1500)
     } catch {
-      setError('Error de conexión al guardar. El archivo puede haberse subido a Drive.')
+      setError('Error de conexión al guardar. El archivo puede haberse subido.')
       setUploading(false); setProgress(0)
     }
   }
