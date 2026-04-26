@@ -40,9 +40,9 @@ export default function StarRating({ archivoId, promedio, totalVotos, usuarioLog
             onClick={() => handleClick(star)}
             onMouseEnter={() => usuarioLogueado && setHovered(star)}
             onMouseLeave={() => setHovered(0)}
-            className={`text-xl transition-colors ${
-              usuarioLogueado ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-            } ${star <= displayValue ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
+            className={`text-xl transition-colors transition-transform duration-100 ease-out ${
+              usuarioLogueado ? 'cursor-pointer hover:scale-110 active:scale-95' : 'cursor-default'
+            } ${star <= displayValue ? 'text-yellow-400' : 'text-gray-300'}`}
             aria-label={`${star} estrella${star > 1 ? 's' : ''}`}
             aria-pressed={seleccionado === star}
           >
@@ -50,7 +50,7 @@ export default function StarRating({ archivoId, promedio, totalVotos, usuarioLog
           </button>
         ))}
       </div>
-      <span className="text-xs text-gray-500 dark:text-gray-400" aria-live="polite">
+      <span className="text-xs text-gray-500" aria-live="polite">
         <span className="sr-only">Promedio: </span>
         {promedio > 0 ? promedio.toFixed(1) : '—'}
         {totalVotos > 0 && ` (${totalVotos} votos)`}

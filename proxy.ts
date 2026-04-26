@@ -1,10 +1,21 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+function safeNextPath(raw: string | null): string {
+  if (!raw) return '/'
+  try {
+    const parsed = new URL(raw, 'http://localhost')
+    return parsed.pathname === raw ? raw : '/'
+  } catch {
+    return '/'
+  }
+}
+
 const PROTECTED_ROUTES = [
   '/upload',
   '/perfil',
   '/progreso',
+  '/mod',
 ]
 
 export default async function proxy(request: NextRequest) {
@@ -62,7 +73,7 @@ export default async function proxy(request: NextRequest) {
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
     const rawNext = request.nextUrl.searchParams.get('next')
-    url.pathname = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
+    url.pathname = safeNextPath(rawNext)
     url.search = ''
     return NextResponse.redirect(url)
   }

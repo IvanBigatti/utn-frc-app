@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
@@ -8,7 +8,7 @@ import FiltroPanel from "./FiltroPanel";
 import "./foro.css";
 import NuevoPostPanel from "./formForo";
 import { getAvatarSrc } from "@/app/components/avatars";
-import { eliminarPostMod } from "@/app/actions/moderador";
+import { eliminarPostMod, banearUsuario } from "@/app/actions/moderador";
 
 type TipoPost = "Pregunta" | "Recurso" | "Debate" | "Aviso";
 
@@ -67,6 +67,10 @@ function ForoContent() {
     tipo: (searchParams.get("tipo") as TipoPost | null) ?? null,
   }));
   const [confirmando, setConfirmando] = useState<{ id: number; tipo: "propio" | "mod" } | null>(null);
+  const [votingPosts, setVotingPosts] = useState<Set<number>>(new Set());
+  const votingPostsRef = useRef<Set<number>>(new Set());
+  const [baneando, setBaneando] = useState<{ uid: string; postId: number } | null>(null);
+  const [banReason, setBanReason] = useState("");
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
   const showToast = useCallback((msg: string, type: "success" | "error" = "error") => {
@@ -132,16 +136,16 @@ function ForoContent() {
     // Cargar info de autores no anónimos
     const uids = [...new Set(fetchedPosts.filter(p => !p.anonimo).map(p => p.auth_user_id))];
     if (uids.length > 0) {
-      const [emailsRes, profilesRes, modsRes] = await Promise.all([
-        supabase.rpc("get_user_emails", { user_ids: uids }),
+      const [displayNamesRes, profilesRes, modsRes] = await Promise.all([
+        supabase.rpc("get_user_display_names", { user_ids: uids }),
         supabase.from("profiles").select("id, avatar_key, avatar_src").in("id", uids),
         supabase.from("moderadores").select("user_id").in("user_id", uids),
       ]);
       const modSet = new Set((modsRes.data ?? []).map((m: { user_id: string }) => m.user_id));
       const map: Record<string, AuthorInfo> = {};
       uids.forEach(uid => { map[uid] = { name: "usuario", avatarKey: null, avatarSrc: null, isMod: modSet.has(uid) }; });
-      (emailsRes.data ?? []).forEach((row: { id: string; email: string }) => {
-        if (map[row.id]) map[row.id].name = row.email.split("@")[0];
+      (displayNamesRes.data ?? []).forEach((row: { id: string; display_name: string }) => {
+        if (map[row.id]) map[row.id].name = row.display_name;
       });
       (profilesRes.data ?? []).forEach((p: { id: string; avatar_key: string | null; avatar_src: string | null }) => {
         if (map[p.id]) { map[p.id].avatarKey = p.avatar_key; map[p.id].avatarSrc = p.avatar_src; }
@@ -149,51 +153,48 @@ function ForoContent() {
       setAuthorMap(map);
     }
 
+    // Fetch votes del usuario (solo al cargar posts, no en updates optimistas)
+    if (userId) {
+      const postIds = fetchedPosts.map((p) => p.id);
+      if (postIds.length > 0) {
+        const { data: votesData } = await supabase
+          .from("foro_vote")
+          .select("post_id, value")
+          .eq("auth_user_id", userId)
+          .in("post_id", postIds);
+        const votesMap: Record<number, 1 | -1> = {};
+        (votesData ?? []).forEach((v: { post_id: number; value: 1 | -1 }) => { votesMap[v.post_id] = v.value; });
+        setUserVotes(votesMap);
+      }
+    }
+
     setLoading(false);
-  }, [filtros, sortOrder]);
+  }, [filtros, sortOrder, userId]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
-  // Fetch user's votes for the current visible posts
-  useEffect(() => {
-    if (!userId || posts.length === 0) return;
-    const postIds = posts.map((p) => p.id);
-    supabase
-      .from("foro_vote")
-      .select("post_id, value")
-      .eq("auth_user_id", userId)
-      .in("post_id", postIds)
-      .then(({ data }) => {
-        if (!data) return;
-        const map: Record<number, 1 | -1> = {};
-        data.forEach((v: { post_id: number; value: 1 | -1 }) => { map[v.post_id] = v.value; });
-        setUserVotes(map);
-      });
-  }, [userId, posts]);
-
   const handleVote = async (e: React.MouseEvent, postId: number, value: 1 | -1) => {
     e.stopPropagation();
-    if (!userId) return;
+    if (!userId || votingPostsRef.current.has(postId)) return;
+    votingPostsRef.current.add(postId);
+    setVotingPosts(new Set(votingPostsRef.current));
 
     const current = userVotes[postId] ?? null;
     const isUnvote = current === value;
 
     if (isUnvote) {
-      // Optimistic
       setUserVotes((prev) => { const next = { ...prev }; delete next[postId]; return next; });
       setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score - value } : p));
       const { error } = await supabase.from("foro_vote").delete()
         .eq("post_id", postId).eq("auth_user_id", userId);
       if (error) {
-        // Rollback
         setUserVotes((prev) => ({ ...prev, [postId]: value }));
         setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score + value } : p));
         showToast("No se pudo registrar el voto. Intentá de nuevo.");
       }
     } else {
       const delta = value - (current ?? 0);
-      // Optimistic
       setUserVotes((prev) => ({ ...prev, [postId]: value }));
       setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score + delta } : p));
       const { error } = await supabase.from("foro_vote").upsert(
@@ -201,7 +202,6 @@ function ForoContent() {
         { onConflict: "post_id,auth_user_id" }
       );
       if (error) {
-        // Rollback
         setUserVotes((prev) => {
           const next = { ...prev };
           if (current !== null) next[postId] = current; else delete next[postId];
@@ -210,6 +210,20 @@ function ForoContent() {
         setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, vote_score: p.vote_score - delta } : p));
         showToast("No se pudo registrar el voto. Intentá de nuevo.");
       }
+    }
+    votingPostsRef.current.delete(postId);
+    setVotingPosts(new Set(votingPostsRef.current));
+  };
+
+  const handleBanear = async (uid: string) => {
+    setBaneando(null);
+    const result = await banearUsuario(uid, banReason);
+    setBanReason("");
+    if (result.error) {
+      showToast(result.error);
+    } else {
+      setPosts((prev) => prev.filter((p) => p.auth_user_id !== uid));
+      showToast("Usuario baneado.", "success");
     }
   };
 
@@ -332,7 +346,7 @@ function ForoContent() {
                   <button
                     className={`foro-vote__btn foro-vote__btn--up ${userVotes[post.id] === 1 ? "active" : ""}`}
                     onClick={(e) => handleVote(e, post.id, 1)}
-                    disabled={!userId}
+                    disabled={!userId || votingPosts.has(post.id)}
                     aria-label={userId ? `Votar positivo (puntaje actual: ${post.vote_score})` : "Iniciá sesión para votar"}
                     aria-pressed={userVotes[post.id] === 1}
                   >
@@ -344,7 +358,7 @@ function ForoContent() {
                   <button
                     className={`foro-vote__btn foro-vote__btn--down ${userVotes[post.id] === -1 ? "active" : ""}`}
                     onClick={(e) => handleVote(e, post.id, -1)}
-                    disabled={!userId}
+                    disabled={!userId || votingPosts.has(post.id)}
                     aria-label={userId ? `Votar negativo (puntaje actual: ${post.vote_score})` : "Iniciá sesión para votar"}
                     aria-pressed={userVotes[post.id] === -1}
                   >
@@ -364,16 +378,21 @@ function ForoContent() {
                         Anónimo
                       </span>
                     ) : (
-                      <span className="foro-post-card__author">
+                      <Link
+                        href={`/perfil?uid=${post.auth_user_id}`}
+                        className="foro-post-card__author foro-post-card__author--link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           className="foro-post-card__author-avatar"
                           src={authorMap[post.auth_user_id]?.avatarSrc ?? getAvatarSrc(authorMap[post.auth_user_id]?.avatarKey)}
                           alt=""
+                          loading="lazy"
                         />
                         {authorMap[post.auth_user_id]?.name ?? "usuario"}
                         {authorMap[post.auth_user_id]?.isMod && <span className="mod-badge">Mod</span>}
-                      </span>
+                      </Link>
                     )}
                     <span className="foro-post-card__sep">·</span>
                     {post.ingenieria?.nombre && (
@@ -445,6 +464,33 @@ function ForoContent() {
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
                           </svg>
+                        </button>
+                      )
+                    )}
+                    {esMod && userId !== post.auth_user_id && (
+                      baneando?.postId === post.id ? (
+                        <span className="foro-post-card__confirm" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            className="foro-post-card__ban-input"
+                            placeholder="Motivo..."
+                            value={banReason}
+                            onChange={(e) => setBanReason(e.target.value)}
+                            autoFocus
+                          />
+                          <button className="foro-post-card__confirm-yes" onClick={(e) => { e.stopPropagation(); handleBanear(post.auth_user_id); }}>Banear</button>
+                          <button className="foro-post-card__confirm-no" onClick={(e) => { e.stopPropagation(); setBaneando(null); setBanReason(""); }}>No</button>
+                        </span>
+                      ) : (
+                        <button
+                          className="foro-post-card__action-btn foro-post-card__action-btn--ban"
+                          onClick={(e) => { e.stopPropagation(); setBaneando({ uid: post.auth_user_id, postId: post.id }); setConfirmando(null); }}
+                          aria-label="Banear autor"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                          </svg>
+                          Banear
                         </button>
                       )
                     )}

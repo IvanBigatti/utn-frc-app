@@ -4,6 +4,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Easing curves */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @theme inline {
@@ -12,18 +17,10 @@
   --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-surface);
+  color: var(--color-text-body);
   font-family: var(--font-inter, 'Inter', 'Arial', sans-serif);
-  background-color: #ffffff;
 }
 
 /* ── Safe area / iOS notch ───────────────────────── */
@@ -142,10 +139,11 @@ body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s var(--ease-out-quart), transform 0.12s var(--ease-out-expo);
   font-family: inherit;
 }
 .btn-primary:hover:not(:disabled) { background: var(--color-primary-dark); }
+.btn-primary:active:not(:disabled) { transform: scale(0.96); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-ghost {
@@ -161,10 +159,11 @@ body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s var(--ease-out-quart), border-color 0.15s var(--ease-out-quart), transform 0.12s var(--ease-out-expo);
   font-family: inherit;
 }
 .btn-ghost:hover:not(:disabled) { background: #e8f0fe; border-color: var(--color-primary); }
+.btn-ghost:active:not(:disabled) { transform: scale(0.96); }
 
 .btn-chip {
   display: inline-flex;
@@ -178,11 +177,12 @@ body {
   font-weight: 600;
   color: var(--color-primary);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s var(--ease-out-quart), border-color 0.15s var(--ease-out-quart), transform 0.12s var(--ease-out-expo);
   white-space: nowrap;
   font-family: inherit;
 }
 .btn-chip:hover:not(.active):not(:disabled) { background: #e8f0fe; border-color: var(--color-primary); }
+.btn-chip:active:not(:disabled) { transform: scale(0.96); }
 .btn-chip.active { background: var(--color-primary); border-color: var(--color-primary); color: #ffffff; }
 .btn-chip:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -277,9 +277,21 @@ body {
   text-transform: uppercase;
   padding: 1px 6px;
   border-radius: 4px;
-  background: #6e40c9;
+  background: var(--color-mod);
   color: #fff;
   vertical-align: middle;
   margin-left: 5px;
   line-height: 1.6;
+}
+
+/* ── Reduced motion ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

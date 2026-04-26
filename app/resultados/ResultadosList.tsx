@@ -58,8 +58,8 @@ export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, e
               onClick={() => setFiltroTipo(f.value)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 filtroTipo === f.value
-                  ? 'bg-blue-600 text-white'
-                  : 'border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-dark hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'border border-gray-300 text-gray-900 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               {f.label}
@@ -68,11 +68,11 @@ export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, e
         </div>
 
         {/* Toggle de orden */}
-        <div className="flex items-center gap-1 border border-gray-300 dark:border-gray-700 rounded-lg p-1">
+        <div className="flex items-center gap-1 border border-gray-300 rounded-lg p-1">
           <button
             onClick={() => setOrden('rating')}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-              orden === 'rating' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'
+              orden === 'rating' ? 'bg-[var(--color-primary)] text-white' : 'text-gray-600'
             }`}
           >
             Mejor puntuación
@@ -80,7 +80,7 @@ export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, e
           <button
             onClick={() => setOrden('reciente')}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-              orden === 'reciente' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'
+              orden === 'reciente' ? 'bg-[var(--color-primary)] text-white' : 'text-gray-600'
             }`}
           >
             Más reciente

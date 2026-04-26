@@ -28,9 +28,9 @@ type Props = {
 }
 
 const TIPO_STYLES: Record<string, string> = {
-  resumen: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-  parcial: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-  tp:      'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  resumen: 'bg-blue-100 text-blue-700',
+  parcial: 'bg-orange-100 text-orange-700',
+  tp:      'bg-green-100 text-green-700',
 }
 
 const TIPO_LABELS: Record<string, string> = {
@@ -130,7 +130,7 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
   if (eliminado) return null
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 flex flex-col gap-3">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -139,15 +139,15 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
             </span>
             <span className="text-xs text-gray-400">{fecha}</span>
           </div>
-          <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{archivo.nombre}</h3>
+          <h3 className="font-semibold text-gray-900 text-sm truncate">{archivo.nombre}</h3>
           {archivo.descripcion && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{archivo.descripcion}</p>
+            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{archivo.descripcion}</p>
           )}
         </div>
       </div>
 
       {errorMsg && (
-        <p className="text-xs text-red-500" role="alert">{errorMsg}</p>
+        <p className="text-xs text-[var(--color-danger)]" role="alert">{errorMsg}</p>
       )}
 
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -212,7 +212,7 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
               <button
                 onClick={handleReportar}
                 disabled={reportando}
-                className="text-xs px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs px-3 py-2 border border-gray-200 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={reportando ? 'Procesando...' : reportado ? 'Quitar reporte de este archivo' : 'Reportar este archivo'}
                 aria-pressed={reportado}
               >
@@ -224,13 +224,13 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
             href={getDriveViewUrl(archivo.drive_file_id)}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="text-xs px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Ver
           </a>
           <button
             onClick={handleDescargar}
-            className="text-xs px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="text-xs px-3 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-lg transition-colors"
           >
             Descargar
           </button>

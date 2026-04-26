@@ -2,7 +2,19 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/server'
+import { createAdminClient } from '@/app/lib/supabase/admin'
+import { deleteFromDrive } from '@/app/lib/googleDrive'
 import { headers } from 'next/headers'
+
+function safeNextPath(raw: string | null): string {
+  if (!raw) return '/'
+  try {
+    const parsed = new URL(raw, 'http://localhost')
+    return parsed.pathname === raw ? raw : '/'
+  } catch {
+    return '/'
+  }
+}
 
 type ActionResult = { error?: string; message?: string } | undefined
 
@@ -28,9 +40,7 @@ export async function signInWithEmail(_prevState: ActionResult, formData: FormDa
 
   if (error) return { error: error.message }
 
-  const rawNext = formData.get('next') as string | null
-  const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
-  redirect(next)
+  redirect(safeNextPath(formData.get('next') as string | null))
 }
 
 export async function signUpWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -66,8 +76,7 @@ export async function signInWithGoogle(formData: FormData) {
   const headerStore = await headers()
   const origin = headerStore.get('origin')
 
-  const rawNext = formData.get('next') as string | null
-  const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
+  const next = safeNextPath(formData.get('next') as string | null)
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -83,6 +92,46 @@ export async function signInWithGoogle(formData: FormData) {
 
 export async function signOut() {
   const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/login')
+}
+
+export async function eliminarCuenta(): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado.' }
+
+  const uid = user.id
+
+  // Eliminar archivos de Google Drive
+  const { data: archivos } = await supabase
+    .from('archivos')
+    .select('drive_file_id')
+    .eq('auth_user_id', uid)
+
+  if (archivos?.length) {
+    await Promise.allSettled(
+      archivos.map((a) => deleteFromDrive(a.drive_file_id))
+    )
+  }
+
+  // Eliminar datos del usuario en orden (respetando FK)
+  const admin = createAdminClient()
+  await admin.from('foro_vote').delete().eq('auth_user_id', uid)
+  await admin.from('foro_comment_report').delete().eq('auth_user_id', uid)
+  await admin.from('foro_report').delete().eq('auth_user_id', uid)
+  await admin.from('puntuaciones').delete().eq('usuario_id', uid)
+  await admin.from('foro_comment').delete().eq('auth_user_id', uid)
+  await admin.from('archivos').delete().eq('auth_user_id', uid)
+  await admin.from('foro_post').delete().eq('auth_user_id', uid)
+  await admin.from('progreso').delete().eq('user_id', uid)
+  await admin.from('moderadores').delete().eq('user_id', uid)
+  await admin.from('profiles').delete().eq('id', uid)
+
+  // Eliminar el usuario de auth
+  const { error } = await admin.auth.admin.deleteUser(uid)
+  if (error) return { error: 'Error al eliminar la cuenta. Intentá de nuevo.' }
+
   await supabase.auth.signOut()
   redirect('/login')
 }

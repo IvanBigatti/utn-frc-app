@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
 import { getAvatarSrc, type AvatarConfig, type UnlockConditionType } from "@/app/components/avatars";
 import { banearUsuario, desbanearUsuario } from "@/app/actions/moderador";
+import EliminarCuentaModal from "@/app/components/EliminarCuentaModal/EliminarCuentaModal";
 import "./perfil.css";
 
 type Post = {
@@ -51,7 +52,12 @@ function PerfilContent() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [saved, setSaved] = useState(false);
   const [isMod, setIsMod] = useState(false);
+  const [isViewedUserMod, setIsViewedUserMod] = useState(false);
   const [avatarConfigs, setAvatarConfigs] = useState<AvatarConfig[]>([]);
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
+  const [usernameEdit, setUsernameEdit] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameSaved, setUsernameSaved] = useState(false);
 
   // Moderación de usuario ajeno
   const [targetUid, setTargetUid] = useState<string | null>(null);
@@ -61,10 +67,11 @@ function PerfilContent() {
   const [banInput, setBanInput] = useState("");
   const [banPending, setBanPending] = useState(false);
   const [banError, setBanError] = useState("");
+  const [showEliminarModal, setShowEliminarModal] = useState(false);
 
   const fetchData = useCallback(async (uid: string, currentUid: string) => {
     const [profileRes, postsCountRes, archivosRes, postsRes, upvotesRes, ratingsRes, avatarConfigsRes] = await Promise.all([
-      supabase.from("profiles").select("avatar_key, avatar_src").eq("id", uid).maybeSingle(),
+      supabase.from("profiles").select("avatar_key, avatar_src, username").eq("id", uid).maybeSingle(),
       supabase.from("foro_post").select("*", { count: "exact", head: true }).eq("auth_user_id", uid),
       supabase.from("archivos").select("*", { count: "exact", head: true }).eq("auth_user_id", uid),
       supabase
@@ -81,6 +88,9 @@ function PerfilContent() {
     setAvatarKey(profileRes.data?.avatar_key ?? null);
     setAvatarSrc(profileRes.data?.avatar_src ?? null);
     setAvatarConfigs((avatarConfigsRes.data ?? []) as AvatarConfig[]);
+    const fetchedUsername = profileRes.data?.username ?? null;
+    setProfileUsername(fetchedUsername);
+    setUsernameEdit(fetchedUsername ?? "");
 
     const { data: votesData } = await supabase
       .from("foro_post_summary")
@@ -99,8 +109,12 @@ function PerfilContent() {
 
     setPosts((postsRes.data ?? []) as Post[]);
 
-    const { data: modData } = await supabase.from("moderadores").select("user_id").eq("user_id", currentUid).maybeSingle();
+    const [{ data: modData }, { data: viewedUserModData }] = await Promise.all([
+      supabase.from("moderadores").select("user_id").eq("user_id", currentUid).maybeSingle(),
+      supabase.from("moderadores").select("user_id").eq("user_id", uid).maybeSingle(),
+    ]);
     setIsMod(!!modData);
+    setIsViewedUserMod(!!viewedUserModData);
 
     if (!!modData && uid !== currentUid) {
       const { data: banData } = await supabase
@@ -180,7 +194,29 @@ function PerfilContent() {
     setBanPending(false);
   };
 
-  const username = email?.split("@")[0] ?? "usuario";
+  const handleSaveUsername = async () => {
+    if (!userId) return;
+    const val = usernameEdit.trim().toLowerCase();
+    if (!/^[a-z0-9_-]{3,30}$/.test(val)) {
+      setUsernameError("3–30 caracteres, solo letras minúsculas, números, _ o -");
+      return;
+    }
+    setUsernameError("");
+    const { error } = await supabase.from("profiles").upsert({
+      id: userId,
+      username: val,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      setUsernameError(error.code === "23505" ? "Ese nombre ya está en uso" : "Error al guardar. Intentá de nuevo.");
+      return;
+    }
+    setProfileUsername(val);
+    setUsernameSaved(true);
+    setTimeout(() => setUsernameSaved(false), 2000);
+  };
+
+  const displayName = profileUsername ?? (email?.split("@")[0] ?? "usuario");
 
   if (loading) {
     return <div className="perfil-loading" role="status" aria-live="polite">Cargando perfil...</div>;
@@ -241,14 +277,14 @@ function PerfilContent() {
         <div className="perfil-avatar-wrapper">
           <img
             src={avatarSrc ?? getAvatarSrc(avatarKey)}
-            alt="Avatar"
+            alt=""
             className="perfil-avatar"
           />
         </div>
         <div className="perfil-info">
           <h1 className="perfil-username">
-            {username}
-            {isMod && <span className="mod-badge">Mod</span>}
+            {displayName}
+            {isViewedUserMod && <span className="mod-badge">Mod</span>}
           </h1>
           <p className="perfil-email">{email}</p>
         </div>
@@ -319,6 +355,41 @@ function PerfilContent() {
       </div>
       )}
 
+      {/* Editor de nombre de usuario — solo en perfil propio */}
+      {isOwnProfile && (
+        <div className="perfil-section">
+          <h2 className="perfil-section__title">Tu nombre visible</h2>
+          <div className="perfil-username-editor">
+            <div className="perfil-username-editor__row">
+              <input
+                type="text"
+                className="perfil-username-editor__input"
+                value={usernameEdit}
+                onChange={(e) => { setUsernameEdit(e.target.value); setUsernameError(""); }}
+                placeholder={email?.split("@")[0] ?? "tu nombre"}
+                maxLength={30}
+                spellCheck={false}
+                autoComplete="off"
+              />
+              <button
+                className="perfil-username-editor__btn"
+                onClick={handleSaveUsername}
+              >
+                Guardar
+              </button>
+            </div>
+            {usernameError && <p className="perfil-username-editor__error">{usernameError}</p>}
+            <p className="perfil-username-editor__hint">3–30 caracteres · solo letras minúsculas, números, _ o -</p>
+            <div className="perfil-saved" style={{ opacity: usernameSaved ? 1 : 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Nombre guardado
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mis publicaciones */}
       <div className="perfil-section">
         <h2 className="perfil-section__title">Mis publicaciones en el foro</h2>
@@ -368,6 +439,27 @@ function PerfilContent() {
           </div>
         )}
       </div>
+
+      {/* Zona peligrosa — solo en perfil propio */}
+      {isOwnProfile && (
+        <div className="perfil-section perfil-danger-zone">
+          <h2 className="perfil-section__title perfil-danger-zone__title">Zona peligrosa</h2>
+          <p className="perfil-danger-zone__desc">
+            Eliminar tu cuenta borrará permanentemente todos tus datos: publicaciones, comentarios, archivos y progreso. Esta acción no se puede deshacer.
+          </p>
+          <button
+            className="perfil-danger-zone__btn"
+            onClick={() => setShowEliminarModal(true)}
+          >
+            Eliminar mi cuenta
+          </button>
+        </div>
+      )}
+
+      <EliminarCuentaModal
+        isOpen={showEliminarModal}
+        onClose={() => setShowEliminarModal(false)}
+      />
 
     </div>
   );

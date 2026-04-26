@@ -16,9 +16,10 @@ type Props = {
   email: string | null
   avatarKey: string | null
   avatarSrc: string | null
+  isMod?: boolean
 }
 
-export default function NavMenu({ email, avatarKey, avatarSrc }: Props) {
+export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
   const [open, setOpen] = useState(false)
   const resolvedSrc = avatarSrc ?? getAvatarSrc(avatarKey)
 
@@ -31,8 +32,8 @@ export default function NavMenu({ email, avatarKey, avatarSrc }: Props) {
             <Link href="/perfil" className="flex-shrink-0" title="Mi perfil">
               <img
                 src={resolvedSrc}
-                alt="Perfil"
-                className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-blue-400 transition-colors object-cover bg-gray-100"
+                alt="Mi perfil"
+                className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-[var(--color-primary-light)] transition-colors object-cover bg-gray-100"
               />
             </Link>
             <form action={signOut}>
@@ -47,7 +48,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc }: Props) {
         ) : (
           <Link
             href="/login"
-            className="hidden md:inline-flex text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
+            className="hidden md:inline-flex text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] px-4 py-2 rounded-lg transition-colors"
           >
             Iniciar sesión
           </Link>
@@ -77,12 +78,23 @@ export default function NavMenu({ email, avatarKey, avatarSrc }: Props) {
               <Link
                 href={href}
                 onClick={() => setOpen(false)}
-                className="block py-2 px-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-600 md:p-0 text-sm transition-colors"
+                className="block py-2 px-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-[var(--color-primary)] md:p-0 text-sm transition-colors"
               >
                 {label}
               </Link>
             </li>
           ))}
+          {isMod && (
+            <li>
+              <Link
+                href="/mod"
+                onClick={() => setOpen(false)}
+                className="block py-2 px-3 text-amber-600 rounded hover:bg-amber-50 md:hover:bg-transparent md:hover:text-amber-700 md:p-0 text-sm font-semibold transition-colors"
+              >
+                Moderación
+              </Link>
+            </li>
+          )}
 
           {/* Mobile: perfil + email + logout */}
           {email && (
@@ -94,7 +106,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc }: Props) {
               >
                 <img
                   src={resolvedSrc}
-                  alt="Perfil"
+                  alt=""
                   className="w-6 h-6 rounded-full border border-gray-200 bg-gray-100"
                 />
                 Mi perfil
@@ -115,7 +127,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc }: Props) {
               <Link
                 href="/login"
                 onClick={() => setOpen(false)}
-                className="block px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg text-center"
+                className="block px-3 py-2 text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] rounded-lg text-center"
               >
                 Iniciar sesión
               </Link>
