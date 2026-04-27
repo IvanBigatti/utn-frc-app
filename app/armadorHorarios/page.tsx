@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import html2canvas from "html2canvas";
+import React, { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import { supabase } from "../lib/supaBaseClient.js";
 import "./horarios.css";
@@ -42,6 +41,10 @@ type Pick = {
   colorIdx: number;
   cuatrimestre: number;
 };
+
+function hexToRgb(hex: string): [number, number, number] {
+  return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+}
 
 function franjaIdx(t: string) { return FRANJAS.indexOf(t); }
 function toMin(t: string) { const [h, m] = t.split(":").map(Number); return h * 60 + (m ?? 0); }
@@ -94,7 +97,6 @@ export default function HorariosPage() {
   const [picks, setPicks] = useState<Map<number, Pick>>(new Map());
   const [errorMsg, setErrorMsg] = useState("");
   const [exporting, setExporting] = useState(false);
-  const grillaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.from("ingenieria").select("id, nombre").order("nombre")
@@ -158,28 +160,122 @@ export default function HorariosPage() {
   }
 
   async function handleExportar() {
-    if (!grillaRef.current) return;
+    if (picks.size === 0) return;
     setExporting(true);
 
-    // Deseleccionar materia activa para que no aparezcan candidates ni conflictos
-    const prevActiva = activaMatId;
-    setActivaMatId(null);
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-    // Esperar dos frames para que React re-renderice sin el estado de selección
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    // Layout A4 landscape: 297 × 210mm
+    const ML = 10, MT = 10;
+    const titleH = 8;
+    const headerH = 8;
+    const timeColW = 16;
+    const pageW = 277; // 297 - 10 - 10
+    const pageH = 190; // 210 - 10 - 10
+    const dayColW = (pageW - timeColW) / 6;
+    const gridTop = MT + titleH + headerH;
+    const gridH = pageH - titleH - headerH;
+    const totalMin = toMin("23:05") - toMin("8:00");
 
-    const canvas = await html2canvas(grillaRef.current, { scale: 2, useCORS: true });
+    function rowH(fi: number) {
+      return ((toMin(FRANJAS[fi + 1]) - toMin(FRANJAS[fi])) / totalMin) * gridH;
+    }
+    function rowY(fi: number) {
+      let y = gridTop;
+      for (let i = 0; i < fi; i++) y += rowH(i);
+      return y;
+    }
 
-    const imgW = canvas.width;
-    const imgH = canvas.height;
-    const pdfW = imgW * 0.264583; // px a mm (96dpi → mm)
-    const pdfH = imgH * 0.264583;
-    const pdf = new jsPDF({ orientation: pdfW > pdfH ? "landscape" : "portrait", unit: "mm", format: [pdfW, pdfH] });
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pdfW, pdfH);
+    // Título
+    const carreraNombre = ingenierias.find(i => i.id === carreraId)?.nombre ?? "";
+    const titulo = [carreraNombre, anio ? `${anio}° Año` : "", cuatrimestre ? `${cuatrimestre}° Cuatrimestre` : ""]
+      .filter(Boolean).join(" — ");
+    pdf.setFontSize(9);
+    pdf.setTextColor(50, 50, 50);
+    pdf.text(titulo || "Horario", ML, MT + 5.5);
+
+    // Header de días
+    pdf.setFillColor(248, 248, 246);
+    pdf.setDrawColor(230, 230, 228);
+    pdf.rect(ML + timeColW, MT + titleH, pageW - timeColW, headerH, "FD");
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(100, 100, 100);
+    DIAS.forEach((dia, di) => {
+      const x = ML + timeColW + di * dayColW + dayColW / 2;
+      pdf.text(dia, x, MT + titleH + 5, { align: "center" });
+    });
+
+    // Franjas horarias
+    FRANJAS.slice(0, -1).forEach((franja, fi) => {
+      const y = rowY(fi);
+      const h = rowH(fi);
+      pdf.setFillColor(252, 252, 250);
+      pdf.rect(ML, y, pageW, h, "F");
+      pdf.setFontSize(5.5);
+      pdf.setTextColor(180, 180, 180);
+      pdf.text(franja, ML + timeColW - 1.5, y + Math.min(h, 3.5), { align: "right" });
+      pdf.setDrawColor(240, 240, 238);
+      pdf.line(ML, y + h, ML + pageW, y + h);
+    });
+
+    // Líneas verticales
+    pdf.setDrawColor(230, 230, 228);
+    DIAS.forEach((_, di) => {
+      const x = ML + timeColW + di * dayColW;
+      pdf.line(x, MT + titleH, x, MT + pageH);
+    });
+    pdf.line(ML + pageW, MT + titleH, ML + pageW, MT + pageH);
+
+    // Borde exterior
+    pdf.setDrawColor(220, 220, 218);
+    pdf.rect(ML, MT + titleH, pageW, headerH + gridH, "S");
+
+    // Bloques de materias
+    const visible = Array.from(picks.values()).filter(
+      p => p.cuatrimestre === 0 || p.cuatrimestre === cuatrimestre
+    );
+
+    for (const pick of visible) {
+      const c = PALETTE[pick.colorIdx % PALETTE.length];
+      const [bgR, bgG, bgB] = hexToRgb(c.bg);
+      const [txR, txG, txB] = hexToRgb(c.text);
+      const [brR, brG, brB] = hexToRgb(c.border);
+
+      for (const h of mergeHorarios(pick.horarios)) {
+        const di = DIAS.indexOf(h.dia);
+        if (di === -1) continue;
+        const fi = franjaIdx(h.hora_inicio);
+        const fe = franjaIdx(h.hora_fin);
+        if (fi === -1 || fe === -1) continue;
+
+        const bX = ML + timeColW + di * dayColW + 1;
+        const bY = rowY(fi) + 1;
+        const bW = dayColW - 2;
+        const bH = rowY(fe) - rowY(fi) - 2;
+
+        pdf.setFillColor(bgR, bgG, bgB);
+        pdf.setDrawColor(brR, brG, brB);
+        pdf.roundedRect(bX, bY, bW, bH, 1, 1, "FD");
+
+        pdf.setFontSize(6);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(txR, txG, txB);
+        const nombre = pick.materiaNombre.length > 22 ? pick.materiaNombre.slice(0, 20) + "…" : pick.materiaNombre;
+        pdf.text(nombre, bX + 1.5, bY + 4);
+
+        if (bH > 8) {
+          pdf.setFontSize(5.5);
+          pdf.setFont("helvetica", "normal");
+          pdf.text(pick.comisionNombre, bX + 1.5, bY + 7.5);
+        }
+        if (bH > 12) {
+          pdf.setFontSize(5);
+          pdf.text(`${h.hora_inicio} - ${h.hora_fin}`, bX + 1.5, bY + 10.5);
+        }
+      }
+    }
+
     pdf.save("horario.pdf");
-
-    // Restaurar materia activa
-    setActivaMatId(prevActiva);
     setExporting(false);
   }
   function getColor(materiaId: number) {
@@ -511,7 +607,7 @@ export default function HorariosPage() {
         </div>
 
       {/* ── Grilla ───────────────────────────────────── */}
-      <div className="horarios-grilla-wrapper" ref={grillaRef}>
+      <div className="horarios-grilla-wrapper">
         {loadingMaterias ? (
           <p className="horarios-loading" style={{ padding: 40 }}>Cargando...</p>
         ) : (
