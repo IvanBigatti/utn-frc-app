@@ -31,7 +31,8 @@ export async function eliminarPostMod(postId: number): Promise<{ error?: string 
 
   if (!mod) return { error: 'No tenés permisos de moderador.' }
 
-  const { error } = await supabase.from('foro_post').delete().eq('id', postId)
+  const admin = createAdminClient()
+  const { error } = await admin.from('foro_post').delete().eq('id', postId)
   if (error) return { error: 'Error al eliminar la publicación.' }
   return {}
 }
@@ -49,7 +50,8 @@ export async function eliminarComentarioMod(comentarioId: number): Promise<{ err
 
   if (!mod) return { error: 'No tenés permisos de moderador.' }
 
-  const { error } = await supabase.from('foro_comment').delete().eq('id', comentarioId)
+  const admin = createAdminClient()
+  const { error } = await admin.from('foro_comment').delete().eq('id', comentarioId)
   if (error) return { error: 'Error al eliminar el comentario.' }
   return {}
 }
