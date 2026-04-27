@@ -139,6 +139,7 @@ body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  min-height: 44px;
   transition: background 0.2s var(--ease-out-quart), transform 0.12s var(--ease-out-expo);
   font-family: inherit;
 }
@@ -159,6 +160,7 @@ body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  min-height: 44px;
   transition: background 0.15s var(--ease-out-quart), border-color 0.15s var(--ease-out-quart), transform 0.12s var(--ease-out-expo);
   font-family: inherit;
 }
@@ -177,6 +179,7 @@ body {
   font-weight: 600;
   color: var(--color-primary);
   cursor: pointer;
+  min-height: 44px;
   transition: background 0.15s var(--ease-out-quart), border-color 0.15s var(--ease-out-quart), transform 0.12s var(--ease-out-expo);
   white-space: nowrap;
   font-family: inherit;

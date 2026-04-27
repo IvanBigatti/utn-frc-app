@@ -15,6 +15,11 @@ colors:
   text-muted: "#9ca3af"
   danger: "#e05555"
   success: "#5a9e6f"
+  footer-bg: "oklch(12% 0.03 255)"
+  footer-surface: "oklch(18% 0.03 255)"
+  footer-border: "oklch(28% 0.04 255)"
+  footer-text: "oklch(93% 0.008 255)"
+  footer-text-muted: "oklch(52% 0.015 255)"
 typography:
   display:
     fontFamily: "Inter, Arial, Helvetica, sans-serif"

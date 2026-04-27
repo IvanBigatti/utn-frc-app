@@ -82,6 +82,8 @@
   padding: 4px 6px;
   border-radius: 6px;
   line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
   flex-shrink: 0;
 }
 .horarios-sidebar-close:hover { background: #f3f4f6; }
@@ -106,7 +108,7 @@
     left: 0;
     top: 50%;
     transform: translateY(-50%);
-    width: 22px;
+    width: 32px;
     height: 52px;
     background: #185fa5;
     color: #fff;
@@ -191,7 +193,7 @@
 
   /* Export btn: solo texto en mobile, sin la carpeta SVG */
   .export-btn {
-    height: 36px;
+    min-height: 44px;
     padding: 0 12px;
     font-size: 13px;
     font-weight: 600;
@@ -208,8 +210,8 @@
   background: #f3f4f6;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   font-size: 20px;
   cursor: pointer;
   display: flex;
@@ -226,7 +228,7 @@
 }
 
 .horarios-toolbar-btn {
-  height: 36px;
+  min-height: 44px;
   padding: 0 14px;
   border-radius: 8px;
   border: 1.5px solid;
@@ -311,6 +313,7 @@
   align-items: center;
   gap: 4px;
   line-height: 1;
+  min-height: 44px;
 }
 
 .horarios-tag:hover:not(:disabled) {
@@ -375,6 +378,7 @@
   border: 0.5px solid;
   background: #f9fafb;
   cursor: pointer;
+  min-height: 44px;
   transition: opacity 0.12s;
 }
 
@@ -567,6 +571,7 @@
   border: 1px solid;
   font-size: 12px;
   cursor: pointer;
+  min-height: 44px;
   transition: opacity 0.2s;
   background: var(--color-surface);
 }
@@ -763,6 +768,7 @@
   font-weight: 600;
   color: var(--color-primary);
   cursor: pointer;
+  min-height: 44px;
   transition: all 0.2s ease;
   text-align: left;
   font-family: inherit;
