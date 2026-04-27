@@ -52,6 +52,7 @@
   font-weight: 700;
   color: var(--color-primary);
   cursor: pointer;
+  min-height: 44px;
   transition: all 0.15s;
 }
 
@@ -277,6 +278,7 @@
   font-weight: 700;
   color: #878a8c;
   cursor: pointer;
+  min-height: 44px;
   transition: background 0.1s;
 }
 
@@ -694,6 +696,7 @@
   font-weight: 700;
   color: #878a8c;
   cursor: pointer;
+  min-height: 44px;
   transition: all 0.15s;
 }
 
@@ -728,7 +731,8 @@
   align-items: center;
   gap: 6px;
   margin-bottom: 12px;
-  padding: 0;
+  padding: 0 8px 0 0;
+  min-height: 44px;
   transition: color 0.15s;
 }
 
@@ -883,7 +887,9 @@
   font-weight: 700;
   color: #878a8c;
   cursor: pointer;
-  padding: 0;
+  padding: 0 8px;
+  min-height: 44px;
+  min-width: 44px;
   transition: color 0.15s;
   flex-shrink: 0;
 }
@@ -968,7 +974,7 @@
 
   .foro-post-card__action-btn {
     padding: 8px;
-    min-height: 36px;
+    min-height: 44px;
   }
 
   .foro-detail-card__body {
