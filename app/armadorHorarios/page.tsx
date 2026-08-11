@@ -224,12 +224,19 @@ export default function HorariosPage() {
       pdf.text(dia, x, MT + titleH + 5, { align: "center" });
     });
 
-    // Franjas horarias
+    // Franjas horarias.
+    // Las filas de recreo no llegan al alto de su propia etiqueta (5.5pt son
+    // ~1.94mm), así que se omite el texto y la línea: dibujarlos encimaba las
+    // horas y encerraba cada recreo entre dos líneas casi pegadas. Es el mismo
+    // criterio que usa la grilla en pantalla con ALTO_MINIMO_ETIQUETA.
+    const ALTO_MINIMO_ETIQUETA_MM = 2.2;
     FRANJAS.slice(0, -1).forEach((franja, fi) => {
       const y = rowY(fi);
       const h = rowH(fi);
-      pdf.setFillColor(252, 252, 250);
+      const esRecreo = h < ALTO_MINIMO_ETIQUETA_MM;
+      pdf.setFillColor(...(esRecreo ? [244, 244, 241] : [252, 252, 250]) as [number, number, number]);
       pdf.rect(ML, y, pageW, h, "F");
+      if (esRecreo) return;
       pdf.setFontSize(5.5);
       pdf.setTextColor(180, 180, 180);
       pdf.text(franja, ML + timeColW - 1.5, y + Math.min(h, 3.5), { align: "right" });
