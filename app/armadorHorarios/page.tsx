@@ -8,11 +8,19 @@ import "./horarios.css";
 
 const DIAS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
 
+// Must stay in chronological order: franjaIdx() compares positions, and
+// slotPx() measures each row as the gap to the next entry.
+// "22:10" es borde de módulo del turno noche (21:35-22:10 y 22:10-23:05).
+// "22:20" lo siguen usando otras carreras, así que conviven.
+// "8:40", "13:00", "15:00" y "17:00" vienen de Civil: son clases de sábado
+// y de cursado especial que el Excel declara con su horario en el texto de
+// la celda, fuera de la grilla de módulos.
 const FRANJAS = [
-  "8:00", "8:45", "9:30", "9:40", "10:25", "11:10", "11:20",
-  "12:05", "12:50", "13:15", "14:00", "14:45", "14:55",
-  "15:40", "16:25", "16:35", "17:20", "18:05", "18:15",
-  "19:00", "19:45", "19:55", "20:40", "21:25", "21:35", "22:20", "23:05",
+  "8:00", "8:40", "8:45", "9:30", "9:40", "10:25", "11:10", "11:20",
+  "12:05", "12:50", "13:00", "13:15", "14:00", "14:45", "14:55",
+  "15:00", "15:40", "16:25", "16:35", "17:00", "17:20", "18:05", "18:15",
+  "19:00", "19:45", "19:55", "20:40", "21:25", "21:35",
+  "22:10", "22:20", "23:05",
 ];
 
 const PALETTE: { bg: string; text: string; border: string }[] = [
@@ -46,13 +54,24 @@ function hexToRgb(hex: string): [number, number, number] {
   return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
 }
 
+// Alto mínimo, en px, para que la etiqueta de hora del eje sea legible:
+// 9px de fuente + 3px de padding superior, con aire.
+const ALTO_MINIMO_ETIQUETA = 16;
+
+// Alto de respaldo cuando un horario no cae en FRANJAS. Sin esto el cálculo
+// da negativo y el navegador descarta el `height` inválido, así que el bloque
+// se achica al alto de su texto. Un dato malo tiene que verse mal, nunca
+// encoger ni borrar una materia del horario en silencio.
+const ALTO_BLOQUE_FALLBACK = 40;
+
 function franjaIdx(t: string) { return FRANJAS.indexOf(t); }
 function toMin(t: string) { const [h, m] = t.split(":").map(Number); return h * 60 + (m ?? 0); }
 function slotPx(i: number) { return Math.max(10, (toMin(FRANJAS[i + 1]) - toMin(FRANJAS[i])) * 0.9); }
 function calcBlockHeight(startIdx: number, endIdx: number) {
+  if (startIdx < 0 || endIdx < 0 || endIdx <= startIdx) return ALTO_BLOQUE_FALLBACK;
   let total = 0;
   for (let i = startIdx; i < endIdx && i < FRANJAS.length - 1; i++) total += slotPx(i);
-  return total - 2;
+  return Math.max(ALTO_BLOQUE_FALLBACK, total - 2);
 }
 function mergeHorarios(horarios: Horario[]): Horario[] {
   const byDia = new Map<string, Horario[]>();
@@ -618,10 +637,21 @@ export default function HorariosPage() {
               <div key={dia} className="horarios-grilla__dia">{dia}</div>
             ))}
 
-            {FRANJAS.slice(0, -1).map((franja, fi) => (
+            {FRANJAS.slice(0, -1).map((franja, fi) => {
+              const alto = slotPx(fi);
+              // Los recreos entre módulos miden 10px. Se marcan como fila
+              // aparte para que no dibujen su propia línea: si la dibujaran,
+              // cada recreo quedaría encerrado entre dos líneas separadas por
+              // 10px y la grilla se lee como rayada. Tampoco entra una
+              // etiqueta de 9px con su padding en ese alto — la hora exacta
+              // igual se lee en el bloque de cada materia.
+              const esRecreo = alto < ALTO_MINIMO_ETIQUETA;
+              return (
               <React.Fragment key={franja}>
-                <div className="horarios-grilla__hora" style={{ height: slotPx(fi) }}>
-                  {franja}
+                <div
+                  className={`horarios-grilla__hora${esRecreo ? " es-recreo" : ""}`}
+                  style={{ height: alto }}>
+                  {esRecreo ? "" : franja}
                 </div>
 
                 {DIAS.map((dia) => {
@@ -629,7 +659,7 @@ export default function HorariosPage() {
                   const candidates = bloques.filter((b) => b.type === "candidate");
                   const nCands = candidates.length;
                   return (
-                    <div key={`${dia}-${franja}`} className="horarios-grilla__celda" style={{ height: slotPx(fi) }} onClick={() => setActivaMatId(null)}>
+                    <div key={`${dia}-${franja}`} className={`horarios-grilla__celda${esRecreo ? " es-recreo" : ""}`} style={{ height: alto }} onClick={() => setActivaMatId(null)}>
                       {bloques.map((bloque) => {
                         const c = getColor(bloque.materia.id);
                         const dur = franjaIdx(bloque.horario.hora_fin) - franjaIdx(bloque.horario.hora_inicio);
@@ -681,7 +711,8 @@ export default function HorariosPage() {
                   );
                 })}
               </React.Fragment>
-            ))}
+              );
+            })}
 
             {/* Fila final 23:05 */}
             <div className="horarios-grilla__hora" style={{ height: 14 }}>23:05</div>
