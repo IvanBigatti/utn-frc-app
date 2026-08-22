@@ -15,11 +15,17 @@ const DIAS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
 // "8:40", "13:00", "15:00" y "17:00" vienen de Civil: son clases de sábado
 // y de cursado especial que el Excel declara con su horario en el texto de
 // la celda, fuera de la grilla de módulos.
+// "20:30" cierra el bloque de Diseño Asistido por Computadora de 1R1
+// (Electrónica): ese último módulo del miércoles dura 30 min, no 45.
+// "12:30" cierra el bloque de Física Electrónica del jueves en 2R1: en el
+// 2do cuatrimestre ese módulo del mediodía se recorta a 25 min.
+// "17:30" arranca los bloques previos al turno noche de 4to año: ese
+// Excel parte el módulo 16:35-18:05 en 16:35-17:30 y 17:30-18:05.
 const FRANJAS = [
   "8:00", "8:40", "8:45", "9:30", "9:40", "10:25", "11:10", "11:20",
-  "12:05", "12:50", "13:00", "13:15", "14:00", "14:45", "14:55",
-  "15:00", "15:40", "16:25", "16:35", "17:00", "17:20", "18:05", "18:15",
-  "19:00", "19:45", "19:55", "20:40", "21:25", "21:35",
+  "12:05", "12:30", "12:50", "13:00", "13:15", "14:00", "14:45", "14:55",
+  "15:00", "15:40", "16:25", "16:35", "17:00", "17:20", "17:30", "18:05", "18:15",
+  "19:00", "19:45", "19:55", "20:30", "20:40", "21:25", "21:35",
   "22:10", "22:20", "23:05",
 ];
 
@@ -110,6 +116,7 @@ export default function HorariosPage() {
   const [materias, setMaterias] = useState<MateriaConComisiones[]>([]);
   const [carreraId, setCarreraId] = useState<number | null>(null);
   const [anio, setAnio] = useState<number | null>(null);
+  const [aniosDisponibles, setAniosDisponibles] = useState<number[]>([]);
   const [cuatrimestre, setCuatrimestre] = useState<1 | 2 | null>(null);
   const [loadingMaterias, setLoadingMaterias] = useState(false);
   const [activaMatId, setActivaMatId] = useState<number | null>(null);
@@ -123,6 +130,22 @@ export default function HorariosPage() {
         if (data) setIngenierias(data);
       });
   }, []);
+
+  // Los años salen de las comisiones cargadas para la carrera, no de una lista
+  // fija: Civil y Electrónica llegan a 6to y el resto no. Con una lista fija
+  // pasaba una de dos cosas — o esos horarios quedaban inalcanzables, o el
+  // resto de las carreras mostraba un año vacío.
+  useEffect(() => {
+    if (!carreraId) { setAniosDisponibles([]); return; }
+    supabase.from("comision").select("año").eq("ingenieria_id", carreraId)
+      .then(({ data }) => {
+        const filas = (data ?? []) as unknown as { "año": number | null }[];
+        const anios = Array.from(new Set(filas.map(c => c["año"])))
+          .filter((a): a is number => typeof a === "number")
+          .sort((a, b) => a - b);
+        setAniosDisponibles(anios);
+      });
+  }, [carreraId]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -477,7 +500,7 @@ export default function HorariosPage() {
             <div className="horarios-filtro">
               <label>Año</label>
               <div className="horarios-tag-list">
-                {[1, 2, 3, 4, 5].map((a) => (
+                {aniosDisponibles.map((a) => (
                   <button key={a}
                     className={`horarios-tag-block ${anio === a ? "active" : ""}`}
                     onClick={() => {
