@@ -21,9 +21,11 @@ const DIAS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
 // 2do cuatrimestre ese módulo del mediodía se recorta a 25 min.
 // "17:30" arranca los bloques previos al turno noche de 4to año: ese
 // Excel parte el módulo 16:35-18:05 en 16:35-17:30 y 17:30-18:05.
+// "13:45" cierra Legislación del jueves en 4D3 (Industrial): ese módulo
+// del mediodía dura 30 min. El mismo Excel parte 13:15-14:00 en dos.
 const FRANJAS = [
   "8:00", "8:40", "8:45", "9:30", "9:40", "10:25", "11:10", "11:20",
-  "12:05", "12:30", "12:50", "13:00", "13:15", "14:00", "14:45", "14:55",
+  "12:05", "12:30", "12:50", "13:00", "13:15", "13:45", "14:00", "14:45", "14:55",
   "15:00", "15:40", "16:25", "16:35", "17:00", "17:20", "17:30", "18:05", "18:15",
   "19:00", "19:45", "19:55", "20:30", "20:40", "21:25", "21:35",
   "22:10", "22:20", "23:05",
