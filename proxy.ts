@@ -138,10 +138,26 @@ export default async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Los redirects también salen con CSP: son documentos que el navegador
-  // renderiza si la respuesta llegara a tener cuerpo.
+  // `NextResponse.redirect` arma una respuesta NUEVA: no hereda nada de
+  // `supabaseResponse`. Hay que copiarle las cookies a mano o se pierden las
+  // que acaba de escribir `setAll` al refrescar la sesión.
+  //
+  // No es teórico. Pegándole a /upload con una cookie de sesión vencida, la
+  // respuesta salía con CERO `set-cookie`, mientras que la misma cookie contra
+  // `/` devolvía el `Max-Age=0` que la limpia. O sea que una sesión muerta se
+  // quedaba pegada en el navegador para siempre.
+  //
+  // El caso grave es el refresh: Supabase rota el refresh token, así que si los
+  // tokens nuevos se pierden en el redirect, el viejo ya quedó consumido del
+  // lado del servidor y la sesión muere. Al usuario lo desloguea.
+  //
+  // Se copia el objeto entero de `getAll()`, que ya trae name, value y todas
+  // las opciones (Path, Max-Age, SameSite, HttpOnly...).
   const redirectTo = (url: URL) => {
     const res = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => res.cookies.set(cookie))
+    // Los redirects también salen con CSP: son documentos que el navegador
+    // renderiza si la respuesta llegara a tener cuerpo.
     res.headers.set('Content-Security-Policy', csp)
     return res
   }
