@@ -76,7 +76,7 @@ export default function ModPage() {
         ? supabase.from('foro_post_summary').select('id, titulo, contenido, auth_user_id, anonimo, created_at').in('id', reportedPostIds)
         : Promise.resolve({ data: [] as { id: number; titulo: string; contenido: string; auth_user_id: string; anonimo: boolean; created_at: string }[] }),
       reportedCommentIds.length > 0
-        ? supabase.from('foro_comment').select('id, contenido, post_id, auth_user_id, anonimo, created_at').in('id', reportedCommentIds)
+        ? supabase.from('foro_comment_summary').select('id, contenido, post_id, auth_user_id, anonimo, created_at').in('id', reportedCommentIds)
         : Promise.resolve({ data: [] as { id: number; contenido: string; post_id: number; auth_user_id: string; anonimo: boolean; created_at: string }[] }),
     ])
 
