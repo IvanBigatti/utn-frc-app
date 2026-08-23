@@ -484,6 +484,21 @@
   background: #f8f8f6;
 }
 
+/* ── Recreos entre módulos ───────────────────────────────────
+   Filas de 10 min. Sin línea inferior: con ella, cada recreo queda
+   entre dos líneas separadas por 10px y la grilla se ve rayada.
+   El fondo apenas más oscuro las deja leer como pausa, no como
+   error de renderizado. */
+.horarios-grilla__hora.es-recreo,
+.horarios-grilla__celda.es-recreo {
+  border-bottom-color: transparent;
+  background: #f4f4f1;
+}
+
+.horarios-grilla__celda.es-recreo:hover {
+  background: #f4f4f1;
+}
+
 .horarios-bloque {
   border-radius: 6px;
   border: 1.5px solid;

@@ -12,6 +12,7 @@ type MateriaConAnio = {
   nombre: string;
   anio: number;
   horas_semanales: number;
+  es_electiva: boolean;
 };
 type ProgresoItem = {
   materia_id: number;
@@ -60,13 +61,13 @@ export default function ProgresoPage() {
       // Traer relaciones comision-materia
       const { data: rels } = await supabase
         .from("ComisionMaterias")
-        .select("idMateria, idComision, materia(id, nombre, horas_semanales)")
+        .select("idMateria, idComision, materia(id, nombre, horas_semanales, es_electiva)")
         .in("idComision", comisiones.map(c => c.id));
 
       if (!rels) { setMateriasPorAnio(new Map()); setLoading(false); return; }
 
       // Mapear materia → año (usando el año de la primera comisión que aparezca)
-      const materiaAnioMap = new Map<number, { nombre: string; anio: number; horas_semanales: number }>();
+      const materiaAnioMap = new Map<number, Omit<MateriaConAnio, "id">>();
       for (const rel of rels as any[]) {
         if (!rel.materia) continue;
         if (materiaAnioMap.has(rel.materia.id)) continue;
@@ -75,15 +76,16 @@ export default function ProgresoPage() {
         materiaAnioMap.set(rel.materia.id, {
         nombre: rel.materia.nombre,
         anio: comision.año,
-        horas_semanales: rel.materia.horas_semanales ?? 0
+        horas_semanales: rel.materia.horas_semanales ?? 0,
+        es_electiva: rel.materia.es_electiva ?? false
       });
       }
 
       // Agrupar por año
       const porAnio = new Map<number, MateriaConAnio[]>();
-      for (const [id, { nombre, anio, horas_semanales }] of materiaAnioMap) {
-        if (!porAnio.has(anio)) porAnio.set(anio, []);
-        porAnio.get(anio)!.push({ id, nombre, anio, horas_semanales });
+      for (const [id, datos] of materiaAnioMap) {
+        if (!porAnio.has(datos.anio)) porAnio.set(datos.anio, []);
+        porAnio.get(datos.anio)!.push({ id, ...datos });
       }
 
       // Ordenar materias dentro de cada año
@@ -98,43 +100,18 @@ export default function ProgresoPage() {
   }, [carreraId]);
 
 
-  //traer horas semanales de cada materia
- useEffect(() => {
-  if (!carreraId || materiasPorAnio.size === 0) {
-    setTotalHoras(0);
-    return;
-  }
-
-  const fetchHoras = async () => {
-    const ids = Array.from(materiasPorAnio.values())
+  // Total de horas obligatorias de la carrera.
+  // Las electivas quedan afuera: el alumno cursa solo algunas, así que
+  // sumarlas todas inflaría el denominador y hundiría el porcentaje.
+  // horas_semanales ya viene en materiasPorAnio — no hace falta ir a la base.
+  useEffect(() => {
+    const total = Array.from(materiasPorAnio.values())
       .flat()
-      .map(m => m.id);
-
-    if (ids.length === 0) {
-      setTotalHoras(0);
-      return;
-    }
-
-    const { data } = await supabase
-      .from("materia")
-      .select("horas_semanales")
-      .in("id", ids);
-
-    if (!data) {
-      setTotalHoras(0);
-      return;
-    }
-
-    const total = data.reduce(
-      (acc, item) => acc + (item.horas_semanales || 0),
-      0
-    );
+      .filter(m => !m.es_electiva)
+      .reduce((acc, m) => acc + m.horas_semanales, 0);
 
     setTotalHoras(total);
-  };
-
-  fetchHoras();
-}, [carreraId, materiasPorAnio]);
+  }, [materiasPorAnio]);
 
   //cargar progreso del usuario
   useEffect(() => {
@@ -199,18 +176,27 @@ export default function ProgresoPage() {
   };
 
   // Calcular estadísticas
+  // El avance se mide solo sobre las materias obligatorias, tanto en el
+  // numerador como en el denominador. Si las electivas contaran como
+  // aprobadas pero no en el total, el anillo podría pasar el 100% y
+  // horasRestantes daría negativo.
   const todasLasMaterias = Array.from(materiasPorAnio.values()).flat();
+  const obligatorias = todasLasMaterias.filter(m => !m.es_electiva);
   const materiasRendidas = Array.from(progreso.keys());
   const notas = materiasRendidas.map(id => progreso.get(id)).filter((n): n is number => n !== null && n !== undefined);
   const promedio = notas.length > 0 ? (notas.reduce((a, b) => a + b, 0) / notas.length) : 0;
-  const porcentaje = todasLasMaterias.length > 0 ? (materiasRendidas.length / todasLasMaterias.length) * 100 : 0;
+  const obligatoriasRendidas = obligatorias.filter(m => progreso.has(m.id));
+  const porcentaje = obligatorias.length > 0 ? (obligatoriasRendidas.length / obligatorias.length) * 100 : 0;
   const aniosOrdenados = Array.from(materiasPorAnio.keys()).sort();
-  const horasAprobadas = Array.from(materiasPorAnio.values())
-  .flat()
-  .filter(m => progreso.has(m.id))
-  .reduce((acc, m: any) => acc + (m.horas_semanales ?? 0), 0);
+  const horasAprobadas = obligatoriasRendidas
+    .reduce((acc, m) => acc + m.horas_semanales, 0);
 
-const horasRestantes = totalHoras - horasAprobadas;
+  const horasRestantes = totalHoras - horasAprobadas;
+
+  // Las electivas se listan y se pueden marcar como rendidas, pero no entran
+  // en ningún total: todavía no está claro cómo se acreditan en cada carrera.
+  const electivas = todasLasMaterias.filter(m => m.es_electiva);
+  const electivasAprobadas = electivas.filter(m => progreso.has(m.id));
 
   return (
     <div className="progreso-page">
@@ -292,6 +278,13 @@ const horasRestantes = totalHoras - horasAprobadas;
                             )}
                           </button>
                           <span className="progreso-materia__nombre">{mat.nombre}</span>
+                          {mat.es_electiva && (
+                            <span
+                              className="progreso-electiva-badge"
+                              title="Electiva: no cuenta para el total de horas obligatorias">
+                              Electiva
+                            </span>
+                          )}
                         </div>
 
                         {rendida && (
@@ -350,7 +343,7 @@ const horasRestantes = totalHoras - horasAprobadas;
               <p className="progreso-card__label">Carrera completada</p>
               <p className="progreso-card__value">{Math.round(porcentaje)}%</p>
               <p className="progreso-card__sub">
-                {materiasRendidas.length} de {todasLasMaterias.length} materias
+                {obligatoriasRendidas.length} de {obligatorias.length} materias obligatorias
               </p>
 
               {/* Barra de progreso */}
@@ -421,6 +414,20 @@ const horasRestantes = totalHoras - horasAprobadas;
     </svg>
   </div>
 </div>
+
+            {/* Electivas — se cuentan aparte, sin sumar a ningún total */}
+            {electivas.length > 0 && (
+              <div className="progreso-card">
+                <p className="progreso-card__label">Electivas</p>
+                <p className="progreso-card__value">
+                  {electivasAprobadas.length}
+                  <span className="progreso-card__value-sep">/{electivas.length}</span>
+                </p>
+                <p className="progreso-card__sub">
+                  No suman al porcentaje ni a las horas de la carrera
+                </p>
+              </div>
+            )}
 
             {/* Progreso por año */}
             <div className="progreso-card">

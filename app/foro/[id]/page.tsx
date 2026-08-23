@@ -118,7 +118,9 @@ export default function PostDetailPage() {
 
   const fetchComments = useCallback(async () => {
     const { data } = await supabase
-      .from("foro_comment")
+      // La vista anula auth_user_id cuando el comentario es anónimo. La tabla
+      // base ya no devuelve las filas anónimas a nadie más que a su autor.
+      .from("foro_comment_summary")
       .select("id, post_id, auth_user_id, contenido, anonimo, created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
