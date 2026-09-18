@@ -20,11 +20,14 @@ export default async function Navbar() {
   }
 
   return (
-    <nav className="navbar bg-white fixed w-full z-20 top-0 start-0 border-b border-gray-200">
+    <nav
+      aria-label="Principal"
+      className="navbar bg-[var(--color-card)] fixed w-full z-20 top-0 start-0 border-b border-[var(--color-border)]"
+    >
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-4 h-14">
 
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900 tracking-tight">TUTN</span>
+          <span className="text-xl font-bold text-[var(--color-text)] tracking-tight">TUTN</span>
         </Link>
 
         <NavMenu email={user?.email ?? null} avatarKey={avatarKey} avatarSrc={avatarSrc} isMod={isMod} />

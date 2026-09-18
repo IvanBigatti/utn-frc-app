@@ -26,7 +26,11 @@
                                        WCAG 2.1 SC 1.4.11 requires 3:1 for any border that
                                        is the only thing identifying a control. Línea de
                                        Carpeta reaches 1.18:1 and cannot be used here. */
-  --color-border-drop:   #7286bd;   /* Dashed dropzone border — 3.43:1 on Papel Cuadriculado */
+  --color-border-accent: #7286bd;   /* Blue-family edge for an interactive surface that
+                                       should read as interactive: the dashed dropzone, the
+                                       search trigger. 3.43:1 on Papel Cuadriculado, where
+                                       --color-primary-ghost sits at 1.44:1 and reads as
+                                       nothing at all. */
 
   /* ── Text ──────────────────────────────────────────────────────────── */
   --color-text:          #111827;   /* Tinta Oscura — headings and structural labels */

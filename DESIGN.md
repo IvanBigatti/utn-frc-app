@@ -138,7 +138,7 @@ A near-monochromatic palette built around one deep institutional blue and a fami
 - **Línea de Carpeta** (`#e8e8e4`): Decorative border and divider color — card borders and section separators. It sits at 1.18:1 against Papel Cuadriculado, which is fine for a line that only groups content, and disqualifying for a line that identifies a control. See Trazo de Lápiz.
 - **Línea Sutil** (`#f0f0ee`): Hairline dividers between form sections. Below visual threshold as a separator, present as a rhythm marker.
 - **Trazo de Lápiz** (`#8f8f89`): The boundary of an interactive field — text inputs, textareas, progress tracks. WCAG 2.1 SC 1.4.11 requires 3:1 for any border that is the only thing identifying a control, and this value reaches 3.11:1 on Papel Cuadriculado. Never use Línea de Carpeta for a field edge.
-- **Trazo Punteado** (`#7286bd`): The dashed edge of a file dropzone. Same 3:1 obligation as Trazo de Lápiz, in the brand blue family (3.43:1).
+- **Trazo Azul** (`#7286bd`): The edge of a surface that should read as interactive — the dashed file dropzone, the search trigger in the navbar. Brand blue family at 3.43:1. Reach for it wherever `#d0d7ed` would leave an edge invisible; that value sits at 1.44:1 and disappears.
 - **Tinta Oscura** (`#111827`): Primary text — headings and labels that carry structural hierarchy.
 - **Grafito** (`#374151`): Body text on light surfaces.
 - **Polvo de Tiza** (`#6b7280`): Supporting metadata: email addresses, dates, subdued context labels.
@@ -236,12 +236,16 @@ The same reasoning applies to `disabled`: a disabled button cannot take focus, s
 
 ### Navigation
 
-Fixed 56px bar — white background, 1px bottom border.
+Fixed 56px bar — Blanco Limpio background, 1px Línea de Carpeta bottom border.
 
 - **Default link:** 14px 500 weight, Grafito text (`#374151`), no underline
-- **Hover / Active:** Azul Pizarrón text. No background shift on desktop.
-- **Mobile:** Hamburger toggle at 9×9 button, reveals stacked links in a rounded `#f9fafb` panel. Avatar and logout below a divider at the list bottom.
-
+- **Hover:** Azul Pizarrón text. No background shift on desktop; Lavado Azul behind the link on mobile.
+- **Current page:** Azul Pizarrón text with a 2px Azul Pizarrón bottom border on desktop, or a Lavado Azul background on mobile, plus a bump to 700 weight. Always paired with `aria-current="page"` — the attribute is what the styling hooks on, so the two cannot drift apart. A section stays current while you are inside it: `/foro/123` keeps Foro marked.
+- **Search:** A trigger for the search dialog lives in the bar itself, icon-only on phones and icon-plus-label from 768px. It is a `<button>` with `aria-haspopup="dialog"`, shaped unlike the links because it opens a dialog instead of navigating. Finding material is the product's primary job and this is its only persistent entry point, so it never hides inside the hamburger.
+- **Mobile:** Hamburger toggle at 44×44, revealing stacked links in a rounded Papel Cuadriculado panel. Avatar, email and logout sit below a divider at the list bottom. The panel closes on Escape, returning focus to the toggle, and on a pointer down outside it.
+- **Link target size:** Links fill the full 56px bar height on desktop rather than wrapping tightly around their text. The `md` breakpoint includes tablets, which are touch devices, and a 20px-tall target is not tappable.
+- **Logout:** Grafito text hovering to Azul Pizarrón, and a `<form>` POST rather than a link. Signing out is routine and reversible, so it does **not** borrow Rojo Parcial.
+- **Moderation link:** The one place `--color-mod` (`#6e40c9`, 6.48:1) appears in navigation. It is not a second brand accent; it marks a role. Never substitute another colour for it.
 ### Vote Control (Signature Component)
 
 The foro voting interface: compact icon buttons flanking a live numeric score.

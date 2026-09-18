@@ -101,7 +101,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  border: 1.5px dashed var(--color-border-drop);
+  border: 1.5px dashed var(--color-border-accent);
   border-radius: 12px;
   padding: 28px 24px;
   cursor: pointer;
