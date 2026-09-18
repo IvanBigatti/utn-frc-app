@@ -1,7 +1,15 @@
+/* ── Upload form ─────────────────────────────────────────────────────────
+   All values come from app/tokens.css. Never hardcode a color or size here.
+   Contrast targets: 4.5:1 for text (SC 1.4.3), 3:1 for control boundaries
+   and state indicators (SC 1.4.11), measured against Papel Cuadriculado.
+   ──────────────────────────────────────────────────────────────────────── */
+
 .upload-form {
+  --upload-gap: 40px;
+
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: var(--upload-gap);
   max-width: 620px;
   margin: 0 auto;
   padding: 48px 24px 80px;
@@ -13,12 +21,28 @@
   gap: 14px;
 }
 
-.upload-field label {
+/* Fieldsets keep .upload-field for the section separator, and drop the
+   browser's default chrome here instead of inline in the markup. */
+.upload-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Fieldset legends and input labels share one label treatment.
+   `.upload-legend` exists so the markup never inlines these values. */
+.upload-field label,
+.upload-legend {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #000000;
+  color: var(--color-text);
+}
+
+.upload-legend {
+  padding: 0;
+  margin-bottom: 14px;
 }
 
 .upload-optional {
@@ -26,12 +50,12 @@
   text-transform: none;
   letter-spacing: 0;
   font-size: 11px;
-  color: #8e8e8e;
+  color: var(--color-text-meta);
 }
 
 .upload-loading {
-  font-size: 13px;
-  color: #aaa;
+  font-size: 14px;
+  color: var(--color-text-body);
   margin: 0;
 }
 
@@ -48,28 +72,27 @@
   gap: 10px;
 }
 
-
 /* Inputs */
 .upload-input,
 .upload-textarea {
-  border: 1.5px solid var(--color-border);
+  border: 1.5px solid var(--color-border-field);
   border-radius: 12px;
   padding: 12px 16px;
   font-size: 14px;
-  color: #1a1a2e;
+  color: var(--color-text);
   outline: none;
   font-family: inherit;
   transition: border-color 0.2s;
-  background: var(--color-surface);
+  background: var(--color-card);
   width: 100%;
   box-sizing: border-box;
 }
 
 .upload-input::placeholder,
-.upload-textarea::placeholder { color: #ccc; }
+.upload-textarea::placeholder { color: var(--color-text-meta); }
 
 .upload-input:focus,
-.upload-textarea:focus { border-color: var(--color-primary-light); }
+.upload-textarea:focus { border-color: var(--color-primary); }
 
 .upload-textarea { resize: vertical; line-height: 1.6; min-height: 100px; }
 
@@ -77,16 +100,16 @@
 .upload-dropzone {
   display: flex;
   align-items: center;
-  border: 1.5px dashed var(--color-primary-ghost);
-  border-radius: 14px;
+  border: 1.5px dashed var(--color-border-drop);
+  border-radius: 12px;
   padding: 28px 24px;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
-  background: var(--color-surface);
+  background: var(--color-card);
 }
 
 .upload-dropzone:hover {
-  border-color: var(--color-primary-light);
+  border-color: var(--color-primary);
   background: var(--color-primary-wash);
 }
 
@@ -96,14 +119,24 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 13px;
-  color: #999;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--color-text-body);
+}
+
+/* File-type/size spec is body information, not a label modifier. */
+.upload-dropzone__spec {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-meta);
 }
 
 .upload-dropzone__name {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-primary);
   font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Progress */
@@ -114,16 +147,16 @@
 }
 
 .upload-scanning-notice {
-  font-size: 12px;
-  color: #7a8aaa;
+  font-size: 14px;
+  color: var(--color-text-body);
   margin: 0;
   text-align: center;
 }
 
 .upload-progress {
   width: 100%;
-  height: 3px;
-  background: var(--color-border-subtle);
+  height: 6px;
+  background: var(--color-border-field);
   border-radius: 100px;
   overflow: hidden;
 }
@@ -139,8 +172,8 @@
 
 /* Error */
 .upload-error {
-  font-size: 12px;
-  color: var(--color-danger);
+  font-size: 14px;
+  color: var(--color-danger-text);
   margin: 0;
 }
 
@@ -150,33 +183,22 @@
   width: 100%;
 }
 
+/* The disabled submit is the first state a student sees, and the hint below it
+   is the only explanation. Keep both legible rather than leaning on the
+   inactive-component exemption in SC 1.4.3. */
 .upload-submit:disabled {
   background: var(--color-border);
-  color: #bbb;
+  color: var(--color-text-body);
+  opacity: 1;
   cursor: not-allowed;
 }
 
-@media (max-width: 480px) {
-  .upload-form {
-    gap: 24px;
-    padding: 24px 16px 48px;
-  }
-
-  .upload-dropzone {
-    padding: 20px 16px;
-  }
-
-  .btn-chip {
-    padding: 8px 16px;
-    font-size: 13px;
-  }
-}
-
-/* Hint */
+/* Hint — pulled up under the submit button, cancelling the form gap.
+   Derived from --upload-gap so it survives the mobile breakpoint. */
 .upload-hint {
-  font-size: 12px;
-  color: #aaa;
-  margin: -24px 0 0;
+  font-size: 14px;
+  color: var(--color-text-body);
+  margin: calc(8px - var(--upload-gap)) 0 0;
   text-align: center;
 }
 
@@ -193,23 +215,40 @@
 .upload-success__icon {
   width: 56px;
   height: 56px;
-  background: #f0f7f0;
+  background: var(--color-success-wash);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-success);
+  color: var(--color-success-text);
 }
 
 .upload-success__title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--color-text);
   margin: 0;
 }
 
 .upload-success__sub {
-  font-size: 13px;
-  color: #aaa;
+  font-size: 14px;
+  color: var(--color-text-meta);
   margin: 0;
+}
+
+@media (max-width: 480px) {
+  .upload-form {
+    --upload-gap: 24px;
+    padding: 24px 16px 48px;
+  }
+
+  .upload-dropzone {
+    padding: 20px 16px;
+  }
+
+  /* Keep the base 13.5px chip label; only the padding tightens on phones.
+     min-height: 44px from globals.css still guarantees the touch target. */
+  .btn-chip {
+    padding: 8px 16px;
+  }
 }

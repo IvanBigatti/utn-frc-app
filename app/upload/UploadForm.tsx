@@ -169,8 +169,8 @@ export default function UploadForm() {
       </div>
 
       {/* Carrera */}
-      <fieldset className="upload-field" style={{ border: 'none', padding: 0, margin: 0 }}>
-        <legend className="upload-field" style={{ padding: 0, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000' }}>Carrera</legend>
+      <fieldset className="upload-field upload-fieldset">
+        <legend className="upload-legend">Carrera</legend>
         <div className="tag-group">
           {ingenierias.map(i => (
             <button key={i.id} type="button"
@@ -185,8 +185,8 @@ export default function UploadForm() {
 
       {/* Año */}
       {carreraId && (
-        <fieldset className="upload-field" style={{ border: 'none', padding: 0, margin: 0 }}>
-          <legend style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000', marginBottom: '14px' }}>Año</legend>
+        <fieldset className="upload-field upload-fieldset">
+          <legend className="upload-legend">Año</legend>
           <div className="tag-group">
             {[1,2,3,4,5].map(a => (
               <button key={a} type="button"
@@ -202,8 +202,8 @@ export default function UploadForm() {
 
       {/* Materia */}
       {carreraId && anio && (
-        <fieldset className="upload-field" style={{ border: 'none', padding: 0, margin: 0 }}>
-          <legend style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000', marginBottom: '14px' }}>Materia</legend>
+        <fieldset className="upload-field upload-fieldset">
+          <legend className="upload-legend">Materia</legend>
           {loadingMaterias ? <p className="upload-loading" role="status">Cargando materias...</p> : (
             <div className="tag-group">
               {materias.map(m => (
@@ -220,8 +220,8 @@ export default function UploadForm() {
       )}
 
       {/* Tipo */}
-      <fieldset className="upload-field" style={{ border: 'none', padding: 0, margin: 0 }}>
-        <legend style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000', marginBottom: '14px' }}>Tipo de material</legend>
+      <fieldset className="upload-field upload-fieldset">
+        <legend className="upload-legend">Tipo de material</legend>
         <div className="tag-group">
           {TIPOS.map(t => (
             <button key={t.value} type="button"
@@ -282,7 +282,7 @@ export default function UploadForm() {
             {file ? (
               <span className="upload-dropzone__name">{file.name}</span>
             ) : (
-              <span>Seleccioná un archivo <span className="upload-optional">PDF, JPG o PNG — máx. 20 MB</span></span>
+              <span>Seleccioná un archivo <span className="upload-dropzone__spec">PDF, JPG o PNG — máx. 20 MB</span></span>
             )}
           </div>
         </label>

@@ -41,7 +41,7 @@ export default function FloatingUploadButton() {
       <button
         onClick={() => setOpen(o => !o)}
         aria-label={open ? 'Cerrar' : 'Agregar material'}
-        className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white shadow-xl flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-4 focus:ring-[var(--color-primary-light)] active:scale-90 ${
+        className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white shadow-xl flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-90 ${
           open ? 'rotate-45 bg-[var(--color-primary-dark)]' : 'rotate-0'
         }`}
       >
