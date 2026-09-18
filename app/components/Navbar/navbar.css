@@ -1,0 +1,351 @@
+/* ── Navbar ──────────────────────────────────────────────────────────────
+   All values come from app/tokens.css. Never hardcode a color here.
+   Layout stays in Tailwind on the component; this file owns the semantics
+   that Tailwind expresses badly: link states, the current page, and the
+   search affordance.
+   ──────────────────────────────────────────────────────────────────────── */
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-link:hover {
+  background: var(--color-primary-wash);
+  color: var(--color-primary);
+}
+
+/* Current page. DESIGN.md specifies Azul Pizarrón for the active state; the
+   weight bump carries it for anyone who cannot separate the two colors. */
+.nav-link[aria-current='page'] {
+  color: var(--color-primary);
+  font-weight: 700;
+  background: var(--color-primary-wash);
+}
+
+.nav-link--mod {
+  color: var(--color-mod);
+  font-weight: 600;
+}
+
+.nav-link--mod:hover,
+.nav-link--mod[aria-current='page'] {
+  color: var(--color-mod);
+  background: color-mix(in srgb, var(--color-mod) 8%, transparent);
+}
+
+@media (min-width: 768px) {
+  /* Full bar height on desktop: the touch target becomes the whole 56px
+     strip instead of the ~20px the text occupies. The md breakpoint covers
+     tablets, which are touch devices. */
+  .nav-link {
+    height: var(--navbar-height);
+    min-height: 0;
+    padding: 0 4px;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+  }
+
+  .nav-link:hover {
+    background: transparent;
+  }
+
+  .nav-link[aria-current='page'] {
+    background: transparent;
+    border-bottom-color: var(--color-primary);
+  }
+
+  .nav-link--mod:hover,
+  .nav-link--mod[aria-current='page'] {
+    background: transparent;
+  }
+
+  .nav-link--mod[aria-current='page'] {
+    border-bottom-color: var(--color-mod);
+  }
+}
+
+/* ── Search trigger ──────────────────────────────────────────────────────
+   A button, not a link: it opens a dialog rather than navigating, and it is
+   shaped differently from the nav links to say so. Finding material is this
+   product's primary job, so it stays in the bar on phones instead of hiding
+   inside the hamburger.
+   The label and icon identify it, so SC 1.4.11 does not oblige the border —
+   but at 1.44:1 the documented ghost edge read as nothing, and the primary
+   affordance of the app should look like a button. */
+.nav-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  background: var(--color-card);
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-border-accent);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.nav-search:hover {
+  background: var(--color-primary-wash);
+  border-color: var(--color-primary);
+}
+
+.nav-search__label {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .nav-search {
+    padding: 0 14px;
+  }
+
+  .nav-search__label {
+    display: inline;
+  }
+}
+
+/* ── User menu ───────────────────────────────────────────────────────────
+   A disclosure, not an ARIA menu: it holds a link and a button, and
+   role="menu" would promise arrow-key semantics these do not have.
+   Per La Regla Plana it carries a border rather than a shadow — the one
+   shadow in this system belongs to true modal overlays. */
+.nav-user {
+  position: relative;
+}
+
+.nav-user__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.nav-user__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--color-card);
+  /* Trazo de Lápiz, not Línea de Carpeta. This panel floats over the page
+     rather than sitting in flow, and Blanco Limpio over Papel Cuadriculado is
+     1.03:1 — the edge is the only thing saying where the menu ends, and at
+     1.18:1 Línea de Carpeta cannot say it. La Regla Plana rules out solving
+     this with a shadow, so the border has to carry it. */
+  border: 1px solid var(--color-border-field);
+  border-radius: 12px;
+}
+
+.nav-user__email {
+  padding: 8px 12px 10px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-meta);
+  border-bottom: 1px solid var(--color-border-subtle);
+  overflow-wrap: anywhere;
+}
+
+.nav-user__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-user__item:hover {
+  background: var(--color-primary-wash);
+  color: var(--color-primary);
+}
+
+/* ── Inline logout confirmation ──────────────────────────────────────────
+   Two-step in place, matching the confirm pattern the foro and the file
+   cards already use. DESIGN.md rules out window.confirm() and alert(), and
+   a modal would be heavier than the slip it guards against.
+   Signing out is reversible, so the confirm button is Azul Pizarrón, not
+   Rojo Parcial: this prevents a mis-tap, it does not warn about a loss. */
+.nav-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  background: var(--color-primary-wash);
+  border-radius: 8px;
+}
+
+.nav-confirm__question {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.nav-confirm__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-confirm__yes,
+.nav-confirm__no {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nav-confirm__yes {
+  background: var(--color-primary);
+  color: var(--color-card);
+  width: 100%;
+}
+
+.nav-confirm__yes:hover {
+  background: var(--color-primary-dark);
+}
+
+.nav-confirm__no {
+  background: var(--color-border-subtle);
+  color: var(--color-text-body);
+}
+
+.nav-confirm__no:hover {
+  background: var(--color-border);
+}
+
+/* ── Mobile disclosure panel ─────────────────────────────────────────── */
+.nav-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  margin-top: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+@media (min-width: 768px) {
+  /* Above the breakpoint there is no panel, just a row in the bar. */
+  .nav-panel {
+    flex-direction: row;
+    gap: 24px;
+    padding: 0;
+    margin-top: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+.nav-email {
+  font-size: 12px;
+  color: var(--color-text-meta);
+}
+
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-border);
+  object-fit: cover;
+  background: var(--color-surface);
+  transition: border-color 0.15s;
+}
+
+.nav-avatar:hover {
+  border-color: var(--color-primary);
+}
+
+/* ── Logout ──────────────────────────────────────────────────────────────
+   Signing out is routine and reversible. It is not a destructive action, so
+   it does not borrow Rojo Parcial — that colour is for losing something. */
+.nav-logout {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  cursor: pointer;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 8px;
+  text-align: left;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-logout:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-wash);
+}
+
+.nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  color: var(--color-text-meta);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nav-toggle:hover {
+  background: var(--color-primary-wash);
+  color: var(--color-primary);
+}
+
+@media (min-width: 768px) {
+  /* Hidden here rather than with `md:hidden`. Not a cascade fix: Tailwind v4
+     puts every utility inside `@layer utilities`, and this file is unlayered,
+     so these rules already win unconditionally. It is kept here so one file
+     owns when the toggle exists, instead of splitting that across two. */
+  .nav-toggle {
+    display: none;
+  }
+}

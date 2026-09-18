@@ -168,16 +168,16 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
         <div className="flex items-center gap-2 flex-wrap">
           {usuarioId === archivo.auth_user_id && (
             confirming === 'propio' ? (
-              <span className="flex items-center gap-1 text-xs text-red-600">
+              <span className="flex items-center gap-1 text-xs text-[var(--color-danger)]">
                 <span>¿Eliminar?</span>
-                <button onClick={() => handleConfirmar('propio')} className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sí</button>
+                <button onClick={() => handleConfirmar('propio')} className="px-2 py-1 bg-[var(--color-danger)] text-white rounded-md hover:brightness-90 transition-colors">Sí</button>
                 <button onClick={() => setConfirming(null)} className="px-2 py-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors">No</button>
               </span>
             ) : (
               <button
                 onClick={() => setConfirming('propio')}
                 disabled={eliminandoPropio}
-                className="text-xs px-3 py-2 border border-red-200 rounded-lg text-red-500 hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs px-3 py-2 border border-red-200 rounded-lg text-[var(--color-danger)] hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {eliminandoPropio ? '...' : 'Eliminar'}
               </button>
@@ -185,16 +185,16 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
           )}
           {esModerador && usuarioId !== archivo.auth_user_id && (
             confirming === 'mod' ? (
-              <span className="flex items-center gap-1 text-xs text-red-600">
+              <span className="flex items-center gap-1 text-xs text-[var(--color-danger)]">
                 <span>¿Eliminar (mod)?</span>
-                <button onClick={() => handleConfirmar('mod')} className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sí</button>
+                <button onClick={() => handleConfirmar('mod')} className="px-2 py-1 bg-[var(--color-danger)] text-white rounded-md hover:brightness-90 transition-colors">Sí</button>
                 <button onClick={() => setConfirming(null)} className="px-2 py-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors">No</button>
               </span>
             ) : (
               <button
                 onClick={() => setConfirming('mod')}
                 disabled={eliminandoMod}
-                className="text-xs px-2 py-2 border border-red-200 rounded-lg text-red-400 hover:text-red-600 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs px-2 py-2 border border-red-200 rounded-lg text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={eliminandoMod ? 'Eliminando...' : 'Eliminar como moderador'}
               >
                 {eliminandoMod ? '...' : <TrashIcon />}
@@ -205,14 +205,14 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
             confirming === 'reporte' ? (
               <span className="flex items-center gap-1 text-xs text-gray-600">
                 <span>¿Reportar?</span>
-                <button onClick={() => handleConfirmar('reporte')} className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sí</button>
+                <button onClick={() => handleConfirmar('reporte')} className="px-2 py-1 bg-[var(--color-danger)] text-white rounded-md hover:brightness-90 transition-colors">Sí</button>
                 <button onClick={() => setConfirming(null)} className="px-2 py-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors">No</button>
               </span>
             ) : (
               <button
                 onClick={handleReportar}
                 disabled={reportando}
-                className="text-xs px-3 py-2 border border-gray-200 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs px-3 py-2 border border-gray-200 rounded-lg text-gray-400 hover:text-[var(--color-danger)] hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={reportando ? 'Procesando...' : reportado ? 'Quitar reporte de este archivo' : 'Reportar este archivo'}
                 aria-pressed={reportado}
               >

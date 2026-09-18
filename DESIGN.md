@@ -13,7 +13,7 @@ colors:
   text-body: "#374151"
   text-secondary: "#6b7280"
   text-muted: "#9ca3af"
-  danger: "#e05555"
+  danger: "#c73333"
   success: "#5a9e6f"
   footer-bg: "oklch(12% 0.03 255)"
   footer-surface: "oklch(18% 0.03 255)"
@@ -135,14 +135,22 @@ A near-monochromatic palette built around one deep institutional blue and a fami
 - **Papel Cuadriculado** (`#fafaf8`): The default app background. Warm off-white with a barely-perceptible cool tint — lighter than cream, warmer than paper-white. The ground the content sits on.
 - **Blanco Limpio** (`#ffffff`): Elevated surfaces: card backgrounds, the navbar, modal panels. Sits visibly above Papel Cuadriculado without a shadow.
 - **Lavado de Estudio** (`#f5f5f3`): Login page background and secondary section washes. Slightly cooler than Papel Cuadriculado.
-- **Línea de Carpeta** (`#e8e8e4`): Default border and divider color. Every card border, input border, and section separator uses this value.
+- **Línea de Carpeta** (`#e8e8e4`): Decorative border and divider color — card borders and section separators. It sits at 1.18:1 against Papel Cuadriculado, which is fine for a line that only groups content, and disqualifying for a line that identifies a control. See Trazo de Lápiz.
 - **Línea Sutil** (`#f0f0ee`): Hairline dividers between form sections. Below visual threshold as a separator, present as a rhythm marker.
+- **Trazo de Lápiz** (`#8f8f89`): The boundary of an interactive field — text inputs, textareas, progress tracks. WCAG 2.1 SC 1.4.11 requires 3:1 for any border that is the only thing identifying a control, and this value reaches 3.11:1 on Papel Cuadriculado. Never use Línea de Carpeta for a field edge.
+- **Trazo Azul** (`#7286bd`): The edge of a surface that should read as interactive — the dashed file dropzone, the search trigger in the navbar. Brand blue family at 3.43:1. Reach for it wherever `#d0d7ed` would leave an edge invisible; that value sits at 1.44:1 and disappears.
 - **Tinta Oscura** (`#111827`): Primary text — headings and labels that carry structural hierarchy.
 - **Grafito** (`#374151`): Body text on light surfaces.
 - **Polvo de Tiza** (`#6b7280`): Supporting metadata: email addresses, dates, subdued context labels.
-- **Lápiz Gris** (`#9ca3af`): Placeholders, disabled text, section eyebrow labels. Never used for body copy.
-- **Rojo Parcial** (`#e05555`): Danger states, destructive action text, error messages. The color of a failed exam — used sparingly and never decoratively.
-- **Verde Aprobado** (`#5a9e6f`): Success states and confirmation messages. Not used decoratively.
+- **Lápiz Gris** (`#9ca3af`): Section eyebrow labels and decorative disabled text. Reaches only 2.54:1 on Blanco Limpio, so it is **not** a placeholder color — placeholder text is real text and owes the full 4.5:1. Use Polvo de Tiza (4.83:1) there. Never used for body copy.
+- **Rojo Parcial** (`#c73333`): Danger states, destructive action text and fills, error messages. The color of a failed exam — used sparingly and never decoratively. Reaches 5.09:1 as text on Papel Cuadriculado and 5.32:1 under a white label, so the same value serves every danger role.
+
+  This used to be `#e05555`. That value had no accessible role left: 3.59:1 as text and 3.75:1 under a white label both fail SC 1.4.3, and it only cleared the 3:1 bar for borders. A system color that fails at its two primary jobs is broken, not merely limited — so it was darkened rather than split into a second token.
+- **Verde Aprobado** (`#5a9e6f`): Success accents and icons on light surfaces. Not used decoratively. It is **not** a fill for a white label — that pairing is 3.20:1. A green button carrying white text uses `#3d7249` (5.67:1), and hovers to `#326040`.
+
+### Never hover a filled button with `opacity`
+
+Fading a filled button toward the page lightens its fill, so a white label loses contrast exactly when the user is interacting with it. `opacity: 0.85` took the destructive buttons from 5.32:1 down to 4.21:1 — the hover state was failing while the resting state passed. Every filled button darkens on hover instead: Azul Pizarrón to `#162d4a`, Rojo Parcial to `#a82d2d`, the green fill to `#326040`.
 
 ### Named Rules
 
@@ -191,7 +199,7 @@ The button hierarchy is expressed through shape: pills (`9999px`) for primary in
 - **Shape:** Pills for primary; gently curved (12px) for ghost and secondary
 - **Primary:** Azul Pizarrón background, white text, 7px 18px padding, 14px 700 weight. Hover darkens to `#162d4a`.
 - **Ghost:** White background, Azul Pizarrón text, 1.5px border (`#d0d9f0`), 12px radius. Hover fills with `#f0f4ff`. Used for secondary surface actions.
-- **Danger:** No background, Rojo Parcial text (`#e05555`). Flat text button only — never pill-shaped.
+- **Danger:** No background, Rojo Parcial text (`#c73333`). Flat text button only — never pill-shaped. Where a filled destructive button is unavoidable, Rojo Parcial is the fill and the label is white (5.32:1).
 - **Focus:** Global `outline: 2px solid #2563eb; outline-offset: 2px` — never suppressed.
 - **Disabled:** `opacity: 0.5; cursor: not-allowed`. No special styling beyond that.
 
@@ -214,18 +222,42 @@ Used for file results, stats panels, profile sections, login containers. Always 
 
 ### Inputs / Fields
 
-- **Style:** 1.5px border (`#e8e8e4`), white background, 12px radius, 12px 16px padding
+- **Style:** 1.5px border Trazo de Lápiz (`#8f8f89`), Blanco Limpio background, 12px radius, 12px 16px padding. The border is the only thing marking where the field is, so it owes 3:1 — Línea de Carpeta does not qualify.
+- **Placeholder:** Polvo de Tiza (`#6b7280`), 4.83:1 on Blanco Limpio. Not Lápiz Gris.
 - **Focus:** Border shifts to Azul Pizarrón (`#1f387e`). Clean color transition only — no glow, no ring inside the field.
-- **Error:** Border shifts to Rojo Parcial (`#e05555`). Error message below field in the same color, 12px body.
+- **Error:** Border shifts to Rojo Parcial. Error message below the field in Rojo Parcial, 14px body.
 - **Disabled:** `opacity: 0.6; background: #fafaf8; cursor: not-allowed`
+
+### A hidden control is still a control
+
+A file input styled with `display: none` leaves the tab order entirely, and the `<label for=>` wrapping it does not become focusable in its place. The result is a control no keyboard user can reach. Hide it with the clip-rect pattern instead, and mirror its focus onto the visible surface with `:focus-within`.
+
+The same reasoning applies to `disabled`: a disabled button cannot take focus, so any `aria-describedby` explaining *why* it is unavailable is unreachable. When the explanation matters, use `aria-disabled`, keep the button focusable, and reject the action in the handler. Note that `globals.css` guards its live states with `:not(:disabled)`, so an `aria-disabled` button must override `:hover` and `:active` explicitly, and must win on specificity rather than on stylesheet order.
 
 ### Navigation
 
-Fixed 56px bar — white background, 1px bottom border.
+Fixed 56px bar — Blanco Limpio background, 1px Línea de Carpeta bottom border.
 
 - **Default link:** 14px 500 weight, Grafito text (`#374151`), no underline
-- **Hover / Active:** Azul Pizarrón text. No background shift on desktop.
-- **Mobile:** Hamburger toggle at 9×9 button, reveals stacked links in a rounded `#f9fafb` panel. Avatar and logout below a divider at the list bottom.
+- **Hover:** Azul Pizarrón text. No background shift on desktop; Lavado Azul behind the link on mobile.
+- **Current page:** Azul Pizarrón text with a 2px Azul Pizarrón bottom border on desktop, or a Lavado Azul background on mobile, plus a bump to 700 weight. Always paired with `aria-current="page"` — the attribute is what the styling hooks on, so the two cannot drift apart. A section stays current while you are inside it: `/foro/123` keeps Foro marked.
+- **Search:** A trigger for the search dialog lives in the bar itself, icon-only on phones and icon-plus-label from 768px. It is a `<button>` with `aria-haspopup="dialog"`, shaped unlike the links because it opens a dialog instead of navigating. Finding material is the product's primary job and this is its only persistent entry point, so it never hides inside the hamburger.
+- **Mobile:** Hamburger toggle at 44×44, revealing stacked links in a rounded Papel Cuadriculado panel. Avatar, email and logout sit below a divider at the list bottom. The panel closes on Escape, returning focus to the toggle, and on a pointer down outside it.
+- **Link target size:** Links fill the full 56px bar height on desktop rather than wrapping tightly around their text. The `md` breakpoint includes tablets, which are touch devices, and a 20px-tall target is not tappable.
+- **Logout:** Grafito text hovering to Azul Pizarrón, and a `<form>` POST rather than a link. Signing out is routine and reversible, so it does **not** borrow Rojo Parcial.
+- **Moderation link:** The one place `--color-mod` (`#6e40c9`, 6.48:1) appears in navigation. It is not a second brand accent; it marks a role. Never substitute another colour for it.
+- **Account menu:** From 768px the avatar is a `<button>` that discloses a panel holding the signed-in email, **Ver perfil** and **Cerrar sesión**. It is a disclosure (`aria-expanded` + `aria-controls`), **not** `role="menu"` — that role promises arrow-key semantics a link and a button do not have. Below the breakpoint there is no second dropdown: the hamburger panel is already a menu, and nesting one inside it would be worse than listing the same items. The panel floats, so its edge uses Trazo de Lápiz rather than Línea de Carpeta: Blanco Limpio over Papel Cuadriculado is 1.03:1, and with La Regla Plana forbidding a shadow the border is the only thing marking where the panel ends.
+
+### Confirming an action
+
+The app confirms in place, never with `window.confirm()`, `alert()` or a modal. The control swaps into a question with two buttons, and swaps back on cancel. This is the pattern the foro post cards and the file cards already use, and the account menu now follows it for logout.
+
+The confirm button takes its colour from what is at stake, not from the fact that a confirmation is happening:
+
+- **Destructive and hard to undo** — deleting a file, a post, an account: Rojo Parcial fill, white label.
+- **Reversible** — signing out: Azul Pizarrón fill. The confirmation is there to catch a mis-tap in a compact menu, not to warn about losing something. Colouring it red would teach students to fear a button that costs them nothing.
+
+Cancel is always the quieter of the two: Línea Sutil background, Grafito label. A pending confirmation is discarded whenever the surface holding it closes, so it can never be waiting the next time that surface opens. `Escape` cancels the confirmation first and only closes the surface on a second press.
 
 ### Vote Control (Signature Component)
 

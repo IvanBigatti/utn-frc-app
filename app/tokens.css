@@ -26,7 +26,11 @@
                                        WCAG 2.1 SC 1.4.11 requires 3:1 for any border that
                                        is the only thing identifying a control. Línea de
                                        Carpeta reaches 1.18:1 and cannot be used here. */
-  --color-border-drop:   #7286bd;   /* Dashed dropzone border — 3.43:1 on Papel Cuadriculado */
+  --color-border-accent: #7286bd;   /* Blue-family edge for an interactive surface that
+                                       should read as interactive: the dashed dropzone, the
+                                       search trigger. 3.43:1 on Papel Cuadriculado, where
+                                       --color-primary-ghost sits at 1.44:1 and reads as
+                                       nothing at all. */
 
   /* ── Text ──────────────────────────────────────────────────────────── */
   --color-text:          #111827;   /* Tinta Oscura — headings and structural labels */
@@ -35,12 +39,22 @@
   --color-text-muted:    #9ca3af;   /* Lápiz Gris — placeholders, disabled, eyebrows */
 
   /* ── Status ────────────────────────────────────────────────────────── */
-  --color-danger:        #e05555;   /* Rojo Parcial — destructive fills, icons, accents */
-  --color-danger-text:   #c73333;   /* Rojo Parcial Oscuro — danger as TEXT. Rojo Parcial
-                                       reaches only 3.59:1 and fails SC 1.4.3 for body copy. */
-  --color-success:       #5a9e6f;   /* Verde Aprobado — confirmation fills and accents */
-  --color-success-text:  #478457;   /* Verde Aprobado Oscuro — success icons/text on wash */
+  --color-danger:        #c73333;   /* Rojo Parcial — errors, destructive text and fills.
+                                       Was #e05555, which had no accessible role left: 3.59:1
+                                       as text and 3.75:1 under a white label both fail
+                                       SC 1.4.3. This value passes in every role — 5.09:1 as
+                                       text on Papel Cuadriculado, 5.32:1 under white. */
+  --color-danger-dark:   #a82d2d;   /* Destructive button hover. Mirrors --color-primary-dark.
+                                       Do NOT hover a filled button with `opacity`: fading it
+                                       toward the page lightens the fill, and 0.85 drops a
+                                       white label from 5.32:1 to 4.21:1. Darken instead. */
+  --color-success:       #5a9e6f;   /* Verde Aprobado — accents and icons on light surfaces.
+                                       NOT a fill for a white label: that is 3.20:1. */
+  --color-success-text:  #478457;   /* Success icons/text on wash (4.02:1 as a 28px icon).
+                                       Still short of 4.5:1 under white — use -fill for that. */
   --color-success-wash:  #edf5ee;   /* Confirmation surface behind success icons */
+  --color-success-fill:  #3d7249;   /* Green fill carrying a white label — 5.67:1 */
+  --color-success-fill-hover: #326040; /* Its hover. Darken, never fade with opacity. */
   --color-mod:           #6e40c9;   /* Moderator badge — static, never reused as accent */
 
   /* ── Accessibility ─────────────────────────────────────────────────── */

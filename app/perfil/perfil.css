@@ -88,17 +88,17 @@
 }
 
 .perfil-mod-panel__btn--ban:hover:not(:disabled) {
-  opacity: 0.85;
+  background: var(--color-danger-dark);
 }
 
 .perfil-mod-panel__btn--unban {
-  background: var(--color-success);
+  background: var(--color-success-fill);
   color: #fff;
   align-self: flex-start;
 }
 
 .perfil-mod-panel__btn--unban:hover:not(:disabled) {
-  opacity: 0.85;
+  background: var(--color-success-fill-hover);
 }
 
 .perfil-mod-panel__error {
@@ -370,7 +370,7 @@
 }
 
 .perfil-post-item__score--positive { color: #16a34a; }
-.perfil-post-item__score--negative { color: #dc2626; }
+.perfil-post-item__score--negative { color: var(--color-danger); }
 
 .perfil-post-item__content {
   flex: 1;
@@ -488,7 +488,7 @@
 
 .perfil-username-editor__error {
   font-size: 12px;
-  color: var(--color-danger, #ef4444);
+  color: var(--color-danger);
   margin: 0;
   font-weight: 500;
 }
@@ -501,7 +501,7 @@
 }
 
 .perfil-danger-zone__title {
-  color: #ef4444 !important;
+  color: var(--color-danger) !important;
 }
 
 .perfil-danger-zone__desc {
@@ -516,7 +516,7 @@
   border-radius: 8px;
   border: 1px solid rgba(239, 68, 68, 0.5);
   background: transparent;
-  color: #ef4444;
+  color: var(--color-danger);
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
@@ -526,5 +526,5 @@
 
 .perfil-danger-zone__btn:hover {
   background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
+  border-color: var(--color-danger);
 }
