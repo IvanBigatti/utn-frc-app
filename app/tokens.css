@@ -20,8 +20,13 @@
   --color-card:          #ffffff;   /* Blanco Limpio — elevated surfaces */
 
   /* ── Borders ───────────────────────────────────────────────────────── */
-  --color-border:        #e8e8e4;   /* Línea de Carpeta — cards, inputs, dividers */
+  --color-border:        #e8e8e4;   /* Línea de Carpeta — cards and dividers (decorative) */
   --color-border-subtle: #f0f0ee;   /* Línea Sutil — section rhythm hairlines */
+  --color-border-field:  #8f8f89;   /* Trazo de Lápiz — boundary of interactive fields.
+                                       WCAG 2.1 SC 1.4.11 requires 3:1 for any border that
+                                       is the only thing identifying a control. Línea de
+                                       Carpeta reaches 1.18:1 and cannot be used here. */
+  --color-border-drop:   #7286bd;   /* Dashed dropzone border — 3.43:1 on Papel Cuadriculado */
 
   /* ── Text ──────────────────────────────────────────────────────────── */
   --color-text:          #111827;   /* Tinta Oscura — headings and structural labels */
@@ -30,8 +35,12 @@
   --color-text-muted:    #9ca3af;   /* Lápiz Gris — placeholders, disabled, eyebrows */
 
   /* ── Status ────────────────────────────────────────────────────────── */
-  --color-danger:        #e05555;   /* Rojo Parcial — errors and destructive actions */
-  --color-success:       #5a9e6f;   /* Verde Aprobado — confirmation states */
+  --color-danger:        #e05555;   /* Rojo Parcial — destructive fills, icons, accents */
+  --color-danger-text:   #c73333;   /* Rojo Parcial Oscuro — danger as TEXT. Rojo Parcial
+                                       reaches only 3.59:1 and fails SC 1.4.3 for body copy. */
+  --color-success:       #5a9e6f;   /* Verde Aprobado — confirmation fills and accents */
+  --color-success-text:  #478457;   /* Verde Aprobado Oscuro — success icons/text on wash */
+  --color-success-wash:  #edf5ee;   /* Confirmation surface behind success icons */
   --color-mod:           #6e40c9;   /* Moderator badge — static, never reused as accent */
 
   /* ── Accessibility ─────────────────────────────────────────────────── */

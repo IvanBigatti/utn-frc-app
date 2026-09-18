@@ -1,22 +1,49 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/app/lib/supabase/client";
 import "./progreso.css";
 
 const supabase = createClient();
 
-type Ingenieria = { id: number; nombre: string };
+type Ingenieria = {
+  id: number;
+  nombre: string;
+  // `numeric` de Postgres llega como STRING en supabase-js (no pierde
+  // precisión). Se castea con Number() antes de usarlo en cualquier cuenta.
+  electivas_modo: string | null;
+  electivas_requeridas: string | number | null;
+};
 type MateriaConAnio = {
   id: number;
   nombre: string;
   anio: number;
   horas_semanales: number;
   es_electiva: boolean;
+  creditos: number | null;
 };
-type ProgresoItem = {
-  materia_id: number;
-  nota: number | null;
+type RelacionComisionMateria = {
+  idMateria: number;
+  idComision: number;
+  materia: {
+    id: number;
+    nombre: string;
+    horas_semanales: number | null;
+    es_electiva: boolean | null;
+    creditos: number | null;
+  } | null;
+};
+
+// Cómo acredita electivas cada carrera. Solo Sistemas tiene régimen cargado
+// hoy; el resto queda en `electivas_modo = null` y la tarjeta se muestra sin
+// denominador en vez de inventar un requisito.
+const UNIDAD_ELECTIVAS: Record<
+  string,
+  { valor: (m: MateriaConAnio) => number; singular: string; plural: string }
+> = {
+  creditos: { valor: m => m.creditos ?? 0, singular: "crédito", plural: "créditos" },
+  cantidad: { valor: () => 1, singular: "electiva", plural: "electivas" },
+  horas: { valor: m => m.horas_semanales, singular: "hora", plural: "horas" },
 };
 
 export default function ProgresoPage() {
@@ -29,6 +56,7 @@ export default function ProgresoPage() {
   const [saving, setSaving] = useState<number | null>(null);
   const [totalHoras, setTotalHoras] = useState<number>(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Obtener usuario
   useEffect(() => {
@@ -39,46 +67,93 @@ export default function ProgresoPage() {
 
   // Cargar ingenierías
   useEffect(() => {
-    supabase.from("ingenieria").select("id, nombre").order("nombre")
+    supabase.from("ingenieria").select("id, nombre, electivas_modo, electivas_requeridas").order("nombre")
       .then(({ data }) => { if (data) setIngenierias(data); });
   }, []);
 
   // Cargar materias agrupadas por año
   useEffect(() => {
-    if (!carreraId) { setMateriasPorAnio(new Map()); return; }
-    const fetch = async () => {
+    if (!carreraId) { setMateriasPorAnio(new Map()); setError(null); return; }
+
+    // Sin cancelación, tocar dos carreras seguidas deja que la respuesta lenta
+    // de la primera pise el estado de la segunda: materias de Química con el
+    // progreso de Sistemas. El abort corta eso de raíz.
+    const ac = new AbortController();
+
+    // Una rama de error que deja el estado viejo en pie es peor que no tener
+    // manejo de error: el panel de stats seguiría mostrando los números de la
+    // carrera anterior bajo la carrera nueva.
+    const fallar = (mensaje: string) => {
+      setError(mensaje);
+      setMateriasPorAnio(new Map());
+      setProgreso(new Map());
+      setLoading(false);
+    };
+
+    const cargar = async () => {
       setLoading(true);
+      setError(null);
 
       // Traer todas las comisiones de la ingeniería
-      const { data: comisionesRaw } = await supabase
+      const { data: comisionesRaw, error: errComisiones } = await supabase
         .from("comision")
         .select("id, año")
-        .eq("ingenieria_id", carreraId);
-      const comisiones = comisionesRaw as unknown as { id: number; año: number }[] | null;
+        .eq("ingenieria_id", carreraId)
+        .abortSignal(ac.signal);
 
+      if (ac.signal.aborted) return;
+      if (errComisiones) {
+        fallar("No pudimos cargar las materias de esta carrera. Probá de nuevo.");
+        return;
+      }
+
+      const comisiones = comisionesRaw as unknown as { id: number; año: number }[] | null;
       if (!comisiones?.length) { setMateriasPorAnio(new Map()); setLoading(false); return; }
 
       // Traer relaciones comision-materia
-      const { data: rels } = await supabase
+      const { data: relsRaw, error: errRels } = await supabase
         .from("ComisionMaterias")
-        .select("idMateria, idComision, materia(id, nombre, horas_semanales, es_electiva)")
-        .in("idComision", comisiones.map(c => c.id));
+        .select("idMateria, idComision, materia(id, nombre, horas_semanales, es_electiva, creditos)")
+        .in("idComision", comisiones.map(c => c.id))
+        .abortSignal(ac.signal);
 
+      if (ac.signal.aborted) return;
+      if (errRels) {
+        fallar("No pudimos cargar las materias de esta carrera. Probá de nuevo.");
+        return;
+      }
+
+      const rels = relsRaw as unknown as RelacionComisionMateria[] | null;
       if (!rels) { setMateriasPorAnio(new Map()); setLoading(false); return; }
 
-      // Mapear materia → año (usando el año de la primera comisión que aparezca)
+      // Una materia puede vivir en comisiones de años distintos: la electiva
+      // "Seguridad en el Desarrollo de Software" se dicta en 4to y en 5to, e
+      // Inglés I aparece en 1ro y 2do de Civil y Eléctrica.
+      //
+      // Antes ganaba "la primera comisión que apareciera" en el resultado, pero
+      // Postgres no garantiza orden sin ORDER BY: el año que veía el alumno
+      // podía cambiar entre recargas. Ahora gana el MENOR, que es
+      // determinístico y es el año en que la materia entra al plan.
+      const anioPorComision = new Map(comisiones.map(c => [c.id, c.año]));
+
       const materiaAnioMap = new Map<number, Omit<MateriaConAnio, "id">>();
-      for (const rel of rels as any[]) {
+      for (const rel of rels) {
         if (!rel.materia) continue;
-        if (materiaAnioMap.has(rel.materia.id)) continue;
-        const comision = comisiones.find(c => c.id === rel.idComision);
-        if (!comision) continue;
+        const anio = anioPorComision.get(rel.idComision);
+        if (anio === undefined) continue;
+
+        const yaVista = materiaAnioMap.get(rel.materia.id);
+        if (yaVista) {
+          yaVista.anio = Math.min(yaVista.anio, anio);
+          continue;
+        }
         materiaAnioMap.set(rel.materia.id, {
-        nombre: rel.materia.nombre,
-        anio: comision.año,
-        horas_semanales: rel.materia.horas_semanales ?? 0,
-        es_electiva: rel.materia.es_electiva ?? false
-      });
+          nombre: rel.materia.nombre,
+          anio,
+          horas_semanales: rel.materia.horas_semanales ?? 0,
+          es_electiva: rel.materia.es_electiva ?? false,
+          creditos: rel.materia.creditos,
+        });
       }
 
       // Agrupar por año
@@ -96,7 +171,9 @@ export default function ProgresoPage() {
       setMateriasPorAnio(porAnio);
       setLoading(false);
     };
-    fetch();
+
+    cargar();
+    return () => ac.abort();
   }, [carreraId]);
 
 
@@ -116,12 +193,23 @@ export default function ProgresoPage() {
   //cargar progreso del usuario
   useEffect(() => {
     if (!userId || !carreraId) { setProgreso(new Map()); return; }
-    const fetch = async () => {
-      const { data } = await supabase
+
+    const ac = new AbortController();
+
+    const cargar = async () => {
+      const { data, error: errProgreso } = await supabase
         .from("progreso")
         .select("materia_id, nota")
         .eq("auth_user_id", userId)
-        .eq("ingenieria_id", carreraId);
+        .eq("ingenieria_id", carreraId)
+        .abortSignal(ac.signal);
+
+      if (ac.signal.aborted) return;
+      if (errProgreso) {
+        setError("No pudimos cargar tu progreso. Probá de nuevo.");
+        setProgreso(new Map());
+        return;
+      }
 
       if (data) {
         const map = new Map<number, number | null>();
@@ -129,7 +217,9 @@ export default function ProgresoPage() {
         setProgreso(map);
       }
     };
-    fetch();
+
+    cargar();
+    return () => ac.abort();
   }, [userId, carreraId]);
 
   // Toggle materia rendida
@@ -187,7 +277,8 @@ export default function ProgresoPage() {
   const promedio = notas.length > 0 ? (notas.reduce((a, b) => a + b, 0) / notas.length) : 0;
   const obligatoriasRendidas = obligatorias.filter(m => progreso.has(m.id));
   const porcentaje = obligatorias.length > 0 ? (obligatoriasRendidas.length / obligatorias.length) * 100 : 0;
-  const aniosOrdenados = Array.from(materiasPorAnio.keys()).sort();
+  // `.sort()` a secas compara como texto: con un 10° año daría 1, 10, 2...
+  const aniosOrdenados = Array.from(materiasPorAnio.keys()).sort((a, b) => a - b);
   const horasAprobadas = obligatoriasRendidas
     .reduce((acc, m) => acc + m.horas_semanales, 0);
 
@@ -197,6 +288,40 @@ export default function ProgresoPage() {
   // en ningún total: todavía no está claro cómo se acreditan en cada carrera.
   const electivas = todasLasMaterias.filter(m => m.es_electiva);
   const electivasAprobadas = electivas.filter(m => progreso.has(m.id));
+
+  // Régimen de electivas de la carrera elegida. Si la carrera no lo tiene
+  // cargado (`electivas_modo = null`), NO se inventa un denominador: se
+  // muestra un contador a secas. Un requisito inventado es peor que ninguno,
+  // porque el alumno lo toma por cierto.
+  const carreraElegida = ingenierias.find(i => i.id === carreraId);
+  const regimenElectivas = carreraElegida?.electivas_modo
+    ? UNIDAD_ELECTIVAS[carreraElegida.electivas_modo] ?? null
+    : null;
+  // `numeric` viaja como string desde Postgres: sin Number() la resta de
+  // "créditos restantes" daría NaN.
+  const electivasRequeridas =
+    carreraElegida?.electivas_requeridas != null
+      ? Number(carreraElegida.electivas_requeridas)
+      : null;
+
+  const hayRequisitoElectivas =
+    regimenElectivas !== null &&
+    electivasRequeridas !== null &&
+    Number.isFinite(electivasRequeridas) &&
+    electivasRequeridas > 0;
+
+  const electivasAcreditadas = regimenElectivas
+    ? electivasAprobadas.reduce((acc, m) => acc + regimenElectivas.valor(m), 0)
+    : 0;
+
+  // Las unidades no caen justo: 7 electivas de 3 créditos dan 21 sobre 20
+  // exigidos. La barra clampea al 100% y lo que falta nunca es negativo.
+  const pctElectivas = hayRequisitoElectivas
+    ? Math.min(100, (electivasAcreditadas / electivasRequeridas!) * 100)
+    : 0;
+  const electivasFaltantes = hayRequisitoElectivas
+    ? Math.max(0, electivasRequeridas! - electivasAcreditadas)
+    : 0;
 
   return (
     <div className="progreso-page">
@@ -249,7 +374,9 @@ export default function ProgresoPage() {
         </div>
 
         {/* Lista de materias por año */}
-        {loading ? (
+        {error ? (
+          <p className="progreso-error" role="alert">{error}</p>
+        ) : loading ? (
           <p className="progreso-loading" role="status">Cargando materias...</p>
         ) : carreraId && (
           <div className="progreso-materias">
@@ -315,14 +442,18 @@ export default function ProgresoPage() {
 
       {/* Panel derecho — estadísticas */}
       <div className="progreso-stats">
-        {!carreraId ? (
+        {!carreraId || error ? (
           <div className="progreso-stats__empty">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }} aria-hidden="true">
               <path d="M18 20V10M12 20V4M6 20v-6" />
             </svg>
-            <p className="progreso-stats__empty-title">Elegí una carrera</p>
+            <p className="progreso-stats__empty-title">
+              {error ? "No pudimos cargar tus datos" : "Elegí una carrera"}
+            </p>
             <p className="progreso-stats__empty-body">
-              Vas a ver tu promedio, el porcentaje de carrera completada y el progreso por año.
+              {error
+                ? "Recargá la página para volver a intentarlo."
+                : "Vas a ver tu promedio, el porcentaje de carrera completada y el progreso por año."}
             </p>
           </div>
         ) : (
@@ -340,7 +471,7 @@ export default function ProgresoPage() {
 
             {/* Porcentaje de carrera */}
             <div className="progreso-card">
-              <p className="progreso-card__label">Carrera completada</p>
+              <p className="progreso-card__label">Carrera completada (materias)</p>
               <p className="progreso-card__value">{Math.round(porcentaje)}%</p>
               <p className="progreso-card__sub">
                 {obligatoriasRendidas.length} de {obligatorias.length} materias obligatorias
@@ -395,9 +526,7 @@ export default function ProgresoPage() {
         fontWeight="700"
         fill="#1f387e"
       >
-        {totalHoras > 0
-          ? `${totalHoras - horasAprobadas}h`
-          : "0h"}
+        {totalHoras > 0 ? `${horasRestantes}h` : "0h"}
       </text>
 
       {/* Subtexto */}
@@ -413,19 +542,54 @@ export default function ProgresoPage() {
 
     </svg>
   </div>
+
+  <p className="progreso-card__sub">
+    de {totalHoras}h semanales obligatorias
+  </p>
 </div>
 
-            {/* Electivas — se cuentan aparte, sin sumar a ningún total */}
+            {/* Electivas — se acreditan aparte, no suman al avance de la carrera */}
             {electivas.length > 0 && (
               <div className="progreso-card">
                 <p className="progreso-card__label">Electivas</p>
-                <p className="progreso-card__value">
-                  {electivasAprobadas.length}
-                  <span className="progreso-card__value-sep">/{electivas.length}</span>
-                </p>
-                <p className="progreso-card__sub">
-                  No suman al porcentaje ni a las horas de la carrera
-                </p>
+
+                {hayRequisitoElectivas ? (
+                  <>
+                    <p className="progreso-card__value">
+                      {electivasAcreditadas}
+                      <span className="progreso-card__value-sep">/{electivasRequeridas}</span>
+                      <span className="progreso-card__value-unit">
+                        {regimenElectivas!.plural}
+                      </span>
+                    </p>
+                    <p className="progreso-card__sub">
+                      {electivasFaltantes === 0
+                        ? `Requisito cumplido — ${electivasAprobadas.length} de ${electivas.length} electivas`
+                        : `Te ${electivasFaltantes === 1 ? "falta" : "faltan"} ${electivasFaltantes} ${
+                            electivasFaltantes === 1
+                              ? regimenElectivas!.singular
+                              : regimenElectivas!.plural
+                          }`}
+                    </p>
+                    <div className="progreso-bar">
+                      <div
+                        className="progreso-bar__fill"
+                        style={{ transform: `scaleX(${pctElectivas / 100})` }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="progreso-card__value">
+                      {electivasAprobadas.length}
+                      <span className="progreso-card__value-sep">/{electivas.length}</span>
+                    </p>
+                    <p className="progreso-card__sub">
+                      Todavía no tenemos cargado cuántas electivas exige esta carrera,
+                      así que no podemos mostrarte cuánto te falta.
+                    </p>
+                  </>
+                )}
               </div>
             )}
 
@@ -434,7 +598,11 @@ export default function ProgresoPage() {
               <p className="progreso-card__label">Por año</p>
               <div className="progreso-por-anio">
                 {aniosOrdenados.map(anio => {
-                  const mats = materiasPorAnio.get(anio)!;
+                  // Solo obligatorias, igual que "Carrera completada". Las
+                  // electivas no son avance del año: se acreditan aparte, por
+                  // créditos, y no pertenecen a un año en particular.
+                  const mats = materiasPorAnio.get(anio)!.filter(m => !m.es_electiva);
+                  if (mats.length === 0) return null;
                   const rendidas = mats.filter(m => progreso.has(m.id)).length;
                   const pct = Math.round((rendidas / mats.length) * 100);
                   return (

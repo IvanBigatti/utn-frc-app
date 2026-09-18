@@ -123,6 +123,20 @@
   color: #aaa;
 }
 
+/* Error de carga: mismo lugar que el loading, pero legible como falla.
+   No usa rojo puro para no gritar — la página no está rota, solo no pudo
+   traer los datos. */
+.progreso-error {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #a33a2e;
+  background: #fdf2f0;
+  border: 1px solid #f0d6d1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0;
+}
+
 .progreso-materias {
   display: flex;
   flex-direction: column;
@@ -353,6 +367,15 @@
 .progreso-card__value-sep {
   color: #9a9a94;
   font-weight: 600;
+}
+
+/* Unidad de la tarjeta de electivas ("créditos"): acompaña al número sin
+   competir con él, para que se lea "18/20 créditos" de un saque. */
+.progreso-card__value-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: #9a9a94;
+  margin-left: 6px;
 }
 
 /* ── Donut ───────────────────────────────────────── */

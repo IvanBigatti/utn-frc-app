@@ -106,7 +106,11 @@ body {
 
 /* ── High-contrast preference (macOS Increase Contrast) */
 @media (prefers-contrast: high) {
-  /* Strengthen muted text that would otherwise fail 4.5:1 */
+  /* Push already-passing muted text further, for users who asked for more.
+     This is an enhancement, not a conformance path: every selector here must
+     already meet 4.5:1 at the default setting.
+     .upload-scanning-notice was removed — it now uses --color-text-body
+     (9.86:1), and #555 would have lowered its contrast to 7.4:1. */
   .upload-optional,
   .login-divider__text,
   .progreso-sub,
@@ -114,8 +118,7 @@ body {
   .sp-card__sub,
   .perfil-email,
   .perfil-metric-card__label,
-  .foro-post-card__preview,
-  .upload-scanning-notice {
+  .foro-post-card__preview {
     color: #555 !important;
   }
   /* Strengthen border-only buttons so they're clearly visible */
