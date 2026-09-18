@@ -125,5 +125,5 @@
 }
 
 .ecm-btn--delete:hover:not(:disabled) {
-  opacity: 0.85;
+  background: var(--color-danger-dark);
 }

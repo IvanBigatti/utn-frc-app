@@ -1016,7 +1016,7 @@
 }
 
 .foro-post-card__confirm-yes:hover {
-  background: #c93f3f;
+  background: var(--color-danger-dark);
 }
 
 .foro-post-card__confirm-no {

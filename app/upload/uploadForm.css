@@ -144,7 +144,7 @@
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-danger-text);
+  color: var(--color-danger);
   cursor: pointer;
   text-align: left;
   overflow-wrap: anywhere;
@@ -215,7 +215,7 @@
 /* Error */
 .upload-error {
   font-size: 14px;
-  color: var(--color-danger-text);
+  color: var(--color-danger);
   margin: 0;
 }
 

@@ -7,7 +7,7 @@ export default function LogoutButton() {
     <form action={signOut}>
       <button
         type="submit"
-        className="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors"
+        className="text-sm font-medium text-gray-600 hover:text-[var(--color-danger)] transition-colors"
       >
         Cerrar sesión
       </button>

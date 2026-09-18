@@ -192,7 +192,7 @@
 }
 
 .mod-btn--ban-confirm:hover {
-  opacity: 0.85;
+  background: var(--color-danger-dark);
 }
 
 .mod-btn--cancel {

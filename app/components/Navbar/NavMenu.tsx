@@ -39,7 +39,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
             <form action={signOut}>
               <button
                 type="submit"
-                className="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors px-3 py-2"
+                className="text-sm font-medium text-gray-600 hover:text-[var(--color-danger)] transition-colors px-3 py-2"
               >
                 Cerrar sesión
               </button>
@@ -115,7 +115,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100 rounded"
+                  className="w-full text-left px-3 py-2 text-sm text-[var(--color-danger)] hover:bg-gray-100 rounded"
                 >
                   Cerrar sesión
                 </button>
