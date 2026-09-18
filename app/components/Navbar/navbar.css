@@ -119,6 +119,142 @@
   }
 }
 
+/* ── User menu ───────────────────────────────────────────────────────────
+   A disclosure, not an ARIA menu: it holds a link and a button, and
+   role="menu" would promise arrow-key semantics these do not have.
+   Per La Regla Plana it carries a border rather than a shadow — the one
+   shadow in this system belongs to true modal overlays. */
+.nav-user {
+  position: relative;
+}
+
+.nav-user__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.nav-user__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--color-card);
+  /* Trazo de Lápiz, not Línea de Carpeta. This panel floats over the page
+     rather than sitting in flow, and Blanco Limpio over Papel Cuadriculado is
+     1.03:1 — the edge is the only thing saying where the menu ends, and at
+     1.18:1 Línea de Carpeta cannot say it. La Regla Plana rules out solving
+     this with a shadow, so the border has to carry it. */
+  border: 1px solid var(--color-border-field);
+  border-radius: 12px;
+}
+
+.nav-user__email {
+  padding: 8px 12px 10px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-meta);
+  border-bottom: 1px solid var(--color-border-subtle);
+  overflow-wrap: anywhere;
+}
+
+.nav-user__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-user__item:hover {
+  background: var(--color-primary-wash);
+  color: var(--color-primary);
+}
+
+/* ── Inline logout confirmation ──────────────────────────────────────────
+   Two-step in place, matching the confirm pattern the foro and the file
+   cards already use. DESIGN.md rules out window.confirm() and alert(), and
+   a modal would be heavier than the slip it guards against.
+   Signing out is reversible, so the confirm button is Azul Pizarrón, not
+   Rojo Parcial: this prevents a mis-tap, it does not warn about a loss. */
+.nav-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  background: var(--color-primary-wash);
+  border-radius: 8px;
+}
+
+.nav-confirm__question {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.nav-confirm__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-confirm__yes,
+.nav-confirm__no {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nav-confirm__yes {
+  background: var(--color-primary);
+  color: var(--color-card);
+  width: 100%;
+}
+
+.nav-confirm__yes:hover {
+  background: var(--color-primary-dark);
+}
+
+.nav-confirm__no {
+  background: var(--color-border-subtle);
+  color: var(--color-text-body);
+}
+
+.nav-confirm__no:hover {
+  background: var(--color-border);
+}
+
 /* ── Mobile disclosure panel ─────────────────────────────────────────── */
 .nav-panel {
   display: flex;

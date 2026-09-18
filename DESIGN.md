@@ -246,6 +246,19 @@ Fixed 56px bar — Blanco Limpio background, 1px Línea de Carpeta bottom border
 - **Link target size:** Links fill the full 56px bar height on desktop rather than wrapping tightly around their text. The `md` breakpoint includes tablets, which are touch devices, and a 20px-tall target is not tappable.
 - **Logout:** Grafito text hovering to Azul Pizarrón, and a `<form>` POST rather than a link. Signing out is routine and reversible, so it does **not** borrow Rojo Parcial.
 - **Moderation link:** The one place `--color-mod` (`#6e40c9`, 6.48:1) appears in navigation. It is not a second brand accent; it marks a role. Never substitute another colour for it.
+- **Account menu:** From 768px the avatar is a `<button>` that discloses a panel holding the signed-in email, **Ver perfil** and **Cerrar sesión**. It is a disclosure (`aria-expanded` + `aria-controls`), **not** `role="menu"` — that role promises arrow-key semantics a link and a button do not have. Below the breakpoint there is no second dropdown: the hamburger panel is already a menu, and nesting one inside it would be worse than listing the same items. The panel floats, so its edge uses Trazo de Lápiz rather than Línea de Carpeta: Blanco Limpio over Papel Cuadriculado is 1.03:1, and with La Regla Plana forbidding a shadow the border is the only thing marking where the panel ends.
+
+### Confirming an action
+
+The app confirms in place, never with `window.confirm()`, `alert()` or a modal. The control swaps into a question with two buttons, and swaps back on cancel. This is the pattern the foro post cards and the file cards already use, and the account menu now follows it for logout.
+
+The confirm button takes its colour from what is at stake, not from the fact that a confirmation is happening:
+
+- **Destructive and hard to undo** — deleting a file, a post, an account: Rojo Parcial fill, white label.
+- **Reversible** — signing out: Azul Pizarrón fill. The confirmation is there to catch a mis-tap in a compact menu, not to warn about losing something. Colouring it red would teach students to fear a button that costs them nothing.
+
+Cancel is always the quieter of the two: Línea Sutil background, Grafito label. A pending confirmation is discarded whenever the surface holding it closes, so it can never be waiting the next time that surface opens. `Escape` cancels the confirmation first and only closes the surface on a second press.
+
 ### Vote Control (Signature Component)
 
 The foro voting interface: compact icon buttons flanking a live numeric score.

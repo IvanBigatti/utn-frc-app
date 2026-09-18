@@ -24,59 +24,102 @@ type Props = {
 
 export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
   const [open, setOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [confirmingLogout, setConfirmingLogout] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
   const resolvedSrc = avatarSrc ?? getAvatarSrc(avatarKey)
 
   const toggleRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const avatarRef = useRef<HTMLButtonElement>(null)
 
   // A section stays current while you are inside it, so /foro/123 still
   // highlights Foro. Exact match only for the root, which every path prefixes.
   const isCurrent = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
 
-  // Navigating away must close the panel. The links' own onClick covers taps,
-  // but not the back button or any programmatic push.
-  useEffect(() => {
+  // Both disclosures can hold the logout confirmation, so closing either one
+  // discards it. A pending confirm must never survive to the next opening.
+  const closeUserMenu = () => {
+    setUserMenuOpen(false)
+    setConfirmingLogout(false)
+  }
+
+  const closePanel = () => {
     setOpen(false)
+    setConfirmingLogout(false)
+  }
+
+  // Navigating away must clear both disclosures. Their own onClick handlers
+  // cover link taps, but not the back button or any programmatic push.
+  useEffect(() => {
+    closePanel()
+    closeUserMenu()
   }, [pathname])
 
   // Opening search closes the hamburger panel. Reaching the search button by
   // keyboard fires no pointerdown, so without this both could be open at once
   // and their two Escape handlers would fight over where focus lands.
   useEffect(() => {
-    if (searchOpen) setOpen(false)
+    if (searchOpen) {
+      closePanel()
+      closeUserMenu()
+    }
   }, [searchOpen])
 
-  // Escape closes the panel and hands focus back to the control that opened it.
+  // Escape steps back one level at a time: it cancels a pending confirmation
+  // before it closes the menu holding it.
   useEffect(() => {
-    if (!open) return
+    if (!open && !userMenuOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      setOpen(false)
+      if (confirmingLogout) { setConfirmingLogout(false); return }
+      if (userMenuOpen) { closeUserMenu(); avatarRef.current?.focus(); return }
+      closePanel()
       toggleRef.current?.focus()
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open])
+  }, [open, userMenuOpen, confirmingLogout])
 
-  // Tapping anywhere else dismisses it, the way a disclosure is expected to
-  // behave. The toggle is excluded so its own click is not handled twice.
+  // Tapping anywhere else dismisses them, the way a disclosure is expected to
+  // behave. Each trigger is excluded so its own click is not handled twice.
   useEffect(() => {
-    if (!open) return
+    if (!open && !userMenuOpen) return
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as Node
-      if (panelRef.current?.contains(target) || toggleRef.current?.contains(target)) return
-      setOpen(false)
+      if (userMenuOpen && !userMenuRef.current?.contains(target)) closeUserMenu()
+      if (open && !panelRef.current?.contains(target) && !toggleRef.current?.contains(target)) {
+        closePanel()
+      }
     }
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [open])
+  }, [open, userMenuOpen])
+
+  const logoutConfirm = (
+    <div className="nav-confirm">
+      <p className="nav-confirm__question">¿Querés cerrar sesión?</p>
+      <div className="nav-confirm__actions">
+        <form action={signOut} className="flex-1">
+          <button type="submit" className="nav-confirm__yes">Sí, cerrar</button>
+        </form>
+        <button
+          type="button"
+          className="nav-confirm__no"
+          onClick={() => setConfirmingLogout(false)}
+        >
+          No
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <>
-      {/* Derecha: buscar + avatar + cerrar sesión (desktop) + hamburger (mobile) */}
+      {/* Derecha: buscar + menú de cuenta (desktop) + hamburger (mobile) */}
       <div className="flex items-center gap-2 md:order-2">
 
         <button
@@ -94,15 +137,36 @@ export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
         </button>
 
         {email ? (
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/perfil" className="flex-shrink-0">
-              <img src={resolvedSrc} alt="Mi perfil" className="nav-avatar" />
-            </Link>
-            <form action={signOut}>
-              <button type="submit" className="nav-logout">
-                Cerrar sesión
-              </button>
-            </form>
+          <div className="nav-user hidden md:block" ref={userMenuRef}>
+            <button
+              ref={avatarRef}
+              type="button"
+              className="nav-user__trigger"
+              aria-expanded={userMenuOpen}
+              aria-controls="nav-user-menu"
+              onClick={() => (userMenuOpen ? closeUserMenu() : setUserMenuOpen(true))}
+            >
+              <img src={resolvedSrc} alt="" className="nav-avatar" />
+              <span className="sr-only">Mi cuenta</span>
+            </button>
+
+            {userMenuOpen && (
+              <div className="nav-user__menu" id="nav-user-menu">
+                <p className="nav-user__email">{email}</p>
+                <Link href="/perfil" className="nav-user__item" onClick={closeUserMenu}>
+                  Ver perfil
+                </Link>
+                {confirmingLogout ? logoutConfirm : (
+                  <button
+                    type="button"
+                    className="nav-user__item"
+                    onClick={() => setConfirmingLogout(true)}
+                  >
+                    Cerrar sesión
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <Link
@@ -115,7 +179,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
 
         <button
           ref={toggleRef}
-          onClick={() => setOpen(o => !o)}
+          onClick={() => (open ? closePanel() : setOpen(true))}
           className="nav-toggle"
           aria-expanded={open}
           aria-controls="navbar-menu"
@@ -138,7 +202,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
             <li key={href}>
               <Link
                 href={href}
-                onClick={() => setOpen(false)}
+                onClick={closePanel}
                 className="nav-link"
                 aria-current={isCurrent(href) ? 'page' : undefined}
               >
@@ -150,7 +214,7 @@ export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
             <li>
               <Link
                 href="/mod"
-                onClick={() => setOpen(false)}
+                onClick={closePanel}
                 className="nav-link nav-link--mod"
                 aria-current={isCurrent('/mod') ? 'page' : undefined}
               >
@@ -159,31 +223,36 @@ export default function NavMenu({ email, avatarKey, avatarSrc, isMod }: Props) {
             </li>
           )}
 
-          {/* Mobile: perfil + email + logout */}
+          {/* Mobile: el panel ya es el menú, así que perfil y cerrar sesión
+              van en la lista en vez de anidar otro desplegable. */}
           {email && (
             <li className="md:hidden border-t border-[var(--color-border)] mt-2 pt-2 flex flex-col gap-1">
               <Link
                 href="/perfil"
-                onClick={() => setOpen(false)}
+                onClick={closePanel}
                 className="nav-link"
                 aria-current={isCurrent('/perfil') ? 'page' : undefined}
               >
                 <img src={resolvedSrc} alt="" className="w-6 h-6 rounded-full mr-2 bg-[var(--color-surface)]" />
-                Mi perfil
+                Ver perfil
               </Link>
               <span className="nav-email px-3 py-1">{email}</span>
-              <form action={signOut}>
-                <button type="submit" className="nav-logout w-full">
+              {confirmingLogout ? logoutConfirm : (
+                <button
+                  type="button"
+                  className="nav-logout w-full"
+                  onClick={() => setConfirmingLogout(true)}
+                >
                   Cerrar sesión
                 </button>
-              </form>
+              )}
             </li>
           )}
           {!email && (
             <li className="md:hidden border-t border-[var(--color-border)] mt-2 pt-2">
               <Link
                 href="/login"
-                onClick={() => setOpen(false)}
+                onClick={closePanel}
                 className="block px-3 py-2 text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] rounded-lg text-center"
               >
                 Iniciar sesión
