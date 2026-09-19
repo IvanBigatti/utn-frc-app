@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
-import { createClient } from '@/app/lib/supabase/client'
+import { useState, useTransition } from 'react'
 import StarRating from '@/app/components/StarRating/StarRating'
 import { incrementarDescargas } from '@/app/actions/archivos'
 import { getDriveViewUrl, getDriveDownloadUrl } from '@/app/lib/driveUrls'
@@ -25,6 +24,8 @@ type Props = {
   usuarioLogueado: boolean
   usuarioId: string | null
   esModerador: boolean
+  /** Resuelto en el servidor. Antes cada tarjeta lo preguntaba por su cuenta. */
+  reportadoInicial: boolean
 }
 
 const TIPO_STYLES: Record<string, string> = {
@@ -45,9 +46,9 @@ const TrashIcon = () => (
   </svg>
 )
 
-export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esModerador }: Props) {
+export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esModerador, reportadoInicial }: Props) {
   const [, startTransition] = useTransition()
-  const [reportado, setReportado] = useState(false)
+  const [reportado, setReportado] = useState(reportadoInicial)
   const [eliminado, setEliminado] = useState(false)
   const [reportando, setReportando] = useState(false)
   const [eliminandoMod, setEliminandoMod] = useState(false)
@@ -60,17 +61,6 @@ export default function ArchivoCard({ archivo, usuarioLogueado, usuarioId, esMod
     setTimeout(() => setErrorMsg(null), 4000)
   }
 
-  useEffect(() => {
-    if (!usuarioId) return
-    const supabase = createClient()
-    supabase
-      .from('archivo_report')
-      .select('id')
-      .eq('archivo_id', archivo.id)
-      .eq('auth_user_id', usuarioId)
-      .maybeSingle()
-      .then(({ data }) => { if (data) setReportado(true) })
-  }, [archivo.id, usuarioId])
 
   const fecha = new Date(archivo.created_at).toLocaleDateString('es-AR', {
     day: 'numeric', month: 'short', year: 'numeric',

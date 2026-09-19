@@ -23,6 +23,8 @@ type Props = {
   usuarioLogueado: boolean
   usuarioId: string | null
   esModerador: boolean
+  /** Ids que este usuario ya reportó, resueltos en el servidor de una sola vez. */
+  reportadosIds: number[]
   materiaNombre: string
 }
 
@@ -33,7 +35,8 @@ const FILTROS = [
   { value: 'tp', label: 'TPs' },
 ]
 
-export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, esModerador, materiaNombre }: Props) {
+export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, esModerador, reportadosIds, materiaNombre }: Props) {
+  const reportados = new Set(reportadosIds)
   const [filtroTipo, setFiltroTipo] = useState('todos')
   const [orden, setOrden] = useState<'rating' | 'reciente'>('rating')
 
@@ -104,7 +107,7 @@ export default function ResultadosList({ archivos, usuarioLogueado, usuarioId, e
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {filtrados.map(archivo => (
-            <ArchivoCard key={archivo.id} archivo={archivo} usuarioLogueado={usuarioLogueado} usuarioId={usuarioId} esModerador={esModerador} />
+            <ArchivoCard key={archivo.id} archivo={archivo} usuarioLogueado={usuarioLogueado} usuarioId={usuarioId} esModerador={esModerador} reportadoInicial={reportados.has(archivo.id)} />
           ))}
         </div>
       )}

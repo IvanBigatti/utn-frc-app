@@ -28,14 +28,33 @@ export default async function ResultadosPage({ searchParams }: { searchParams: S
     supabase.auth.getUser(),
   ])
 
+  // Ambas cosas dependen de `user`, así que van en la misma etapa.
+  //
+  // Los reportes se piden UNA vez para todos los archivos. Antes cada
+  // ArchivoCard preguntaba por el suyo desde el navegador: con 20 archivos
+  // eran 20 viajes Córdoba -> Virginia (~200ms cada uno, y el navegador
+  // abre como mucho 6 en paralelo) para responder algo que el servidor
+  // resuelve en una consulta de ~2ms mientras arma el HTML.
   let esModerador = false
+  let reportadosIds: number[] = []
   if (user) {
-    const { data: mod } = await supabase
-      .from('moderadores')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const archivoIds = (archivos ?? []).map(a => a.id)
+    const [{ data: mod }, { data: reportes }] = await Promise.all([
+      supabase
+        .from('moderadores')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      archivoIds.length
+        ? supabase
+            .from('archivo_report')
+            .select('archivo_id')
+            .eq('auth_user_id', user.id)
+            .in('archivo_id', archivoIds)
+        : Promise.resolve({ data: [] as { archivo_id: number }[] }),
+    ])
     esModerador = !!mod
+    reportadosIds = (reportes ?? []).map((r: { archivo_id: number }) => r.archivo_id)
   }
 
   const materiaNombre = archivos?.[0]?.materia_nombre ?? 'esta materia'
@@ -57,6 +76,7 @@ export default async function ResultadosPage({ searchParams }: { searchParams: S
         usuarioLogueado={!!user}
         usuarioId={user?.id ?? null}
         esModerador={esModerador}
+        reportadosIds={reportadosIds}
         materiaNombre={materiaNombre}
       />
     </main>
