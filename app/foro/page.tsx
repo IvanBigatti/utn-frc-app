@@ -48,6 +48,9 @@ function ForoContent() {
   const searchParams = useSearchParams();
 
   const [posts, setPosts] = useState<Post[]>([]);
+  // Ids tal como los devolvió la última consulta al servidor. Ver el efecto
+  // de votos más abajo para por qué no se derivan de `posts`.
+  const [fetchedIdsKey, setFetchedIdsKey] = useState("");
   const [loading, setLoading] = useState(true);
   const [filtroOpen, setFiltroOpen] = useState(false);
   const [nuevoPostOpen, setNuevoPostOpen] = useState(false);
@@ -132,6 +135,7 @@ function ForoContent() {
 
     const fetchedPosts = data as unknown as Post[];
     setPosts(fetchedPosts);
+    setFetchedIdsKey(fetchedPosts.map((p) => p.id).join(","));
 
     // Cargar info de autores no anónimos
     const uids = [...new Set(fetchedPosts.filter(p => !p.anonimo).map(p => p.auth_user_id))];
@@ -153,26 +157,40 @@ function ForoContent() {
       setAuthorMap(map);
     }
 
-    // Fetch votes del usuario (solo al cargar posts, no en updates optimistas)
-    if (userId) {
-      const postIds = fetchedPosts.map((p) => p.id);
-      if (postIds.length > 0) {
-        const { data: votesData } = await supabase
-          .from("foro_vote")
-          .select("post_id, value")
-          .eq("auth_user_id", userId)
-          .in("post_id", postIds);
-        const votesMap: Record<number, 1 | -1> = {};
-        (votesData ?? []).forEach((v: { post_id: number; value: 1 | -1 }) => { votesMap[v.post_id] = v.value; });
-        setUserVotes(votesMap);
-      }
-    }
-
     setLoading(false);
-  }, [filtros, sortOrder, userId]);
+  }, [filtros, sortOrder]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  // Qué votó ESTE usuario depende de quién es, no de cuáles son los posts.
+  // Tenerlo adentro de fetchPosts metía `userId` en sus dependencias, y como
+  // la sesión resuelve después del primer render, cambiar de null al uid real
+  // volvía a disparar el efecto y re-pedía la lista entera de posts desde
+  // cero. Todo usuario logueado pagaba el doble en cada carga del foro.
+  //
+  // La clave viene de lo que devolvió el SERVIDOR, no del estado `posts`.
+  // Parece lo mismo y no lo es: `posts` también cambia por ediciones locales
+  // —votar, borrar un post propio, banear a alguien— y derivar la clave de ahí
+  // hacía que cada borrado disparara una consulta de votos al pedo. Atada a la
+  // respuesta del servidor, sólo cambia cuando de verdad hay posts nuevos.
+  useEffect(() => {
+    if (!userId || !fetchedIdsKey) { setUserVotes({}); return; }
+    let cancelled = false;
+    const run = async () => {
+      const { data } = await supabase
+        .from("foro_vote")
+        .select("post_id, value")
+        .eq("auth_user_id", userId)
+        .in("post_id", fetchedIdsKey.split(",").map(Number));
+      if (cancelled) return;
+      const votesMap: Record<number, 1 | -1> = {};
+      (data ?? []).forEach((v: { post_id: number; value: 1 | -1 }) => { votesMap[v.post_id] = v.value; });
+      setUserVotes(votesMap);
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [userId, fetchedIdsKey]);
 
   const handleVote = async (e: React.MouseEvent, postId: number, value: 1 | -1) => {
     e.stopPropagation();

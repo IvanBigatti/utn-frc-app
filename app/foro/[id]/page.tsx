@@ -140,35 +140,25 @@ export default function PostDetailPage() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
 
-    const { data: postData } = await supabase
-      .from("foro_post_summary")
-      .select(`
-        id, titulo, contenido, created_at, auth_user_id, anonimo,
-        ingenieria_id, anio, tipo, vote_score, comment_count,
-        comision:comision_id ( id, nombre ),
-        materia:materia_id ( id, nombre ),
-        ingenieria:ingenieria_id ( id, nombre )
-      `)
-      .eq("id", postId)
-      .single();
+    // El post y sus comentarios sólo dependen de postId, no uno del otro.
+    // Encadenarlos costaba un viaje de ida y vuelta a Virginia de más.
+    const [{ data: postData }, commentData] = await Promise.all([
+      supabase
+        .from("foro_post_summary")
+        .select(`
+          id, titulo, contenido, created_at, auth_user_id, anonimo,
+          ingenieria_id, anio, tipo, vote_score, comment_count,
+          comision:comision_id ( id, nombre ),
+          materia:materia_id ( id, nombre ),
+          ingenieria:ingenieria_id ( id, nombre )
+        `)
+        .eq("id", postId)
+        .single(),
+      fetchComments(),
+    ]);
 
     if (postData) setPost(postData as unknown as Post);
-
-    const commentData = await fetchComments();
     setComments(commentData as Comment[]);
-
-    if (userId) {
-      const [{ data: voteData }, { data: postReportData }, { data: commentReportData }] = await Promise.all([
-        supabase.from("foro_vote").select("value").eq("post_id", postId).eq("auth_user_id", userId).maybeSingle(),
-        supabase.from("foro_report").select("id").eq("post_id", postId).eq("auth_user_id", userId).maybeSingle(),
-        supabase.from("foro_comment_report").select("comment_id").eq("auth_user_id", userId),
-      ]);
-      setUserVote(voteData ? (voteData.value as UserVote) : null);
-      setPostReportado(!!postReportData);
-      if (commentReportData) {
-        setComentariosReportados(new Set(commentReportData.map((r: { comment_id: number }) => r.comment_id)));
-      }
-    }
 
     if (postData) {
       const uids: string[] = [];
@@ -185,9 +175,38 @@ export default function PostDetailPage() {
     }
 
     setLoading(false);
-  }, [postId, userId, fetchComments, fetchAuthorNames]);
+  }, [postId, fetchComments, fetchAuthorNames]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Lo propio del usuario (su voto, sus reportes) va aparte del post y los
+  // comentarios. Adentro de fetchAll metía `userId` en sus dependencias, y
+  // como la sesión resuelve después del primer render, pasar de null al uid
+  // real volvía a pedir el post y TODOS los comentarios por segunda vez.
+  useEffect(() => {
+    if (!userId) {
+      setUserVote(null);
+      setPostReportado(false);
+      setComentariosReportados(new Set());
+      return;
+    }
+    let cancelled = false;
+    const run = async () => {
+      const [{ data: voteData }, { data: postReportData }, { data: commentReportData }] = await Promise.all([
+        supabase.from("foro_vote").select("value").eq("post_id", postId).eq("auth_user_id", userId).maybeSingle(),
+        supabase.from("foro_report").select("id").eq("post_id", postId).eq("auth_user_id", userId).maybeSingle(),
+        supabase.from("foro_comment_report").select("comment_id").eq("auth_user_id", userId),
+      ]);
+      if (cancelled) return;
+      setUserVote(voteData ? (voteData.value as UserVote) : null);
+      setPostReportado(!!postReportData);
+      setComentariosReportados(
+        new Set((commentReportData ?? []).map((r: { comment_id: number }) => r.comment_id))
+      );
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [postId, userId]);
 
   const handleVote = async (value: 1 | -1) => {
     if (!userId || votingRef.current) return;
