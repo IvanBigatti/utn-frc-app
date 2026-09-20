@@ -1067,3 +1067,17 @@
   border: 1px solid #c3e6d0;
 }
 
+
+/* Cargar más publicaciones ─────────────────────────────────────────────
+   El foro pagina de a 20. Antes traía la tabla entera. */
+.foro-cargar-mas {
+  align-self: center;
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 10px 24px;
+}
+
+.foro-cargar-mas[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -41,6 +41,10 @@ type Filtros = {
 
 type SortOrder = "recientes" | "votados";
 
+// 20 entra en una pantalla y media. Suficiente para que casi nadie necesite
+// pedir la segunda página, y chico para que la primera llegue rápido.
+const PAGE_SIZE = 20;
+
 function ForoContent() {
   const supabase = createClient();
   const router = useRouter();
@@ -52,6 +56,8 @@ function ForoContent() {
   // de votos más abajo para por qué no se derivan de `posts`.
   const [fetchedIdsKey, setFetchedIdsKey] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [filtroOpen, setFiltroOpen] = useState(false);
   const [nuevoPostOpen, setNuevoPostOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -72,6 +78,8 @@ function ForoContent() {
   const [confirmando, setConfirmando] = useState<{ id: number; tipo: "propio" | "mod" } | null>(null);
   const [votingPosts, setVotingPosts] = useState<Set<number>>(new Set());
   const votingPostsRef = useRef<Set<number>>(new Set());
+  // Número de la última carga pedida. Ver cargarPagina.
+  const pedidoRef = useRef(0);
   const [baneando, setBaneando] = useState<{ uid: string; postId: number } | null>(null);
   const [banReason, setBanReason] = useState("");
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
@@ -105,8 +113,24 @@ function ForoContent() {
     });
   }, []);
 
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
+  // Trae UNA página. Antes traía la tabla entera: sin `.range()` el navegador
+  // se bajaba todos los posts que existieran, con el cuerpo completo de cada
+  // uno, por un cable de 150ms hasta Argentina.
+  //
+  // Y no era sólo lento: la consulta de autores de más abajo manda los uids en
+  // la query string (`?id=in.(uuid,uuid,...)`). Con UUIDs de 36 caracteres,
+  // ~200 autores distintos pasan los 8 KB que suele aceptar un proxy y la
+  // petición empieza a fallar con 414. O sea que el foro se ROMPÍA al crecer,
+  // no se degradaba. Con 20 por página el problema desaparece.
+  const cargarPagina = useCallback(async (offset: number, modo: "reemplazar" | "agregar") => {
+    // Sin esto: pedís "cargar más", cambiás el orden antes de que llegue, y la
+    // respuesta vieja se AGREGA sobre la lista nueva. Quedan dos ordenamientos
+    // mezclados y el offset siguiente sale mal. Cada llamada se queda con su
+    // número; si dejó de ser la última, descarta lo que llegó.
+    const idPedido = ++pedidoRef.current;
+    const vigente = () => idPedido === pedidoRef.current;
+
+    if (modo === "reemplazar") setLoading(true); else setLoadingMore(true);
 
     let query = supabase
       .from("foro_post_summary")
@@ -130,15 +154,43 @@ function ForoContent() {
       query = query.order("created_at", { ascending: false });
     }
 
-    const { data, error } = await query;
-    if (error || !data) { setLoading(false); return; }
+    // Desempate estable: sin esto, dos posts con el mismo score pueden salir en
+    // distinto orden entre página y página y aparecer repetidos o salteados.
+    query = query.order("id", { ascending: false });
 
-    const fetchedPosts = data as unknown as Post[];
-    setPosts(fetchedPosts);
-    setFetchedIdsKey(fetchedPosts.map((p) => p.id).join(","));
+    // Se piden PAGE_SIZE + 1 y se muestra PAGE_SIZE. La fila sobrante es la
+    // única forma de saber si hay más sin una consulta de conteo aparte: con
+    // `length === PAGE_SIZE` no se distingue "hay otra página" de "justo
+    // terminó", y con 20, 40 o 60 posts el botón aparecía para no traer nada.
+    const { data, error } = await query.range(offset, offset + PAGE_SIZE);
+    if (!vigente()) return;
+    if (error || !data) { setLoading(false); setLoadingMore(false); return; }
 
-    // Cargar info de autores no anónimos
-    const uids = [...new Set(fetchedPosts.filter(p => !p.anonimo).map(p => p.auth_user_id))];
+    const filas = data as unknown as Post[];
+    const pagina = filas.slice(0, PAGE_SIZE);
+    setHasMore(filas.length > PAGE_SIZE);
+
+    // Dos actualizaciones independientes. Meter una adentro del updater de la
+    // otra no es confiable: React puede ejecutar ese updater más de una vez.
+    //
+    // Al agregar se descartan los ids que ya están en pantalla. Paginar por
+    // offset no es inmune a que la lista se mueva debajo tuyo: si otra persona
+    // publica mientras leés, todo baja un lugar y el offset siguiente devuelve
+    // una fila que ya viste. El filtro la saca.
+    setPosts((prev) => {
+      if (modo === "reemplazar") return pagina;
+      const yaEstan = new Set(prev.map((p) => p.id));
+      return [...prev, ...pagina.filter((p) => !yaEstan.has(p.id))];
+    });
+    setFetchedIdsKey((prev) => {
+      const nuevos = pagina.map((p) => p.id).join(",");
+      if (modo === "reemplazar") return nuevos;
+      return prev && nuevos ? `${prev},${nuevos}` : prev || nuevos;
+    });
+
+    // Info de autores: sólo la de ESTA página. Al agregar se fusiona con lo que
+    // ya había en vez de reemplazarlo, o las páginas viejas perderían su autor.
+    const uids = [...new Set(pagina.filter(p => !p.anonimo).map(p => p.auth_user_id))];
     if (uids.length > 0) {
       const [displayNamesRes, profilesRes, modsRes] = await Promise.all([
         supabase.rpc("get_user_display_names", { user_ids: uids }),
@@ -154,14 +206,28 @@ function ForoContent() {
       (profilesRes.data ?? []).forEach((p: { id: string; avatar_key: string | null; avatar_src: string | null }) => {
         if (map[p.id]) { map[p.id].avatarKey = p.avatar_key; map[p.id].avatarSrc = p.avatar_src; }
       });
-      setAuthorMap(map);
+      if (!vigente()) return;
+      setAuthorMap((prev) => ({ ...prev, ...map }));
     }
 
     setLoading(false);
+    setLoadingMore(false);
   }, [filtros, sortOrder]);
 
+  // Cambiar filtros u orden arranca de cero.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+  useEffect(() => { cargarPagina(0, "reemplazar"); }, [cargarPagina]);
+
+  const cargarMas = () => {
+    if (loadingMore || !hasMore) return;
+    // El offset sale de posts.length a propósito, no de cuántas filas sirvió
+    // el servidor. Borrar un post lo achica y publicar otra persona corre todo
+    // hacia abajo, así que puede quedar por detrás del offset real — nunca por
+    // delante. Quedarse corto hace que se repita alguna fila, y el filtro de
+    // duplicados de cargarPagina la descarta. Pasarse, en cambio, saltearía un
+    // post para siempre. Se elige el error que no pierde nada.
+    cargarPagina(posts.length, "agregar");
+  };
 
   // Qué votó ESTE usuario depende de quién es, no de cuáles son los posts.
   // Tenerlo adentro de fetchPosts metía `userId` en sus dependencias, y como
@@ -186,7 +252,18 @@ function ForoContent() {
       if (cancelled) return;
       const votesMap: Record<number, 1 | -1> = {};
       (data ?? []).forEach((v: { post_id: number; value: 1 | -1 }) => { votesMap[v.post_id] = v.value; });
-      setUserVotes(votesMap);
+      // Un voto que todavía está viajando no figura en lo que devolvió la base.
+      // Reemplazar el mapa entero lo borraría de la pantalla aunque el voto sí
+      // haya salido bien: votás y hacés "cargar más", y tu flecha se apaga
+      // sola. Para los posts con voto en vuelo mandamos lo que hay en pantalla.
+      setUserVotes((prev) => {
+        const fusionado = { ...votesMap };
+        votingPostsRef.current.forEach((postId) => {
+          if (prev[postId] !== undefined) fusionado[postId] = prev[postId];
+          else delete fusionado[postId];
+        });
+        return fusionado;
+      });
     };
     run();
     return () => { cancelled = true; };
@@ -517,6 +594,26 @@ function ForoContent() {
 
               </article>
             ))}
+
+            {/* aria-disabled y no disabled: el navegador saca el foco de un
+                elemento que se deshabilita, así que a quien navega por teclado
+                se le perdía el foco en CADA clic de "cargar más". */}
+            {hasMore && (
+              <button
+                className="btn-ghost foro-cargar-mas"
+                onClick={cargarMas}
+                aria-disabled={loadingMore}
+              >
+                {loadingMore ? "Cargando..." : "Cargar más publicaciones"}
+              </button>
+            )}
+
+            {/* Anuncia el resultado de "cargar más" a quien no ve la lista crecer. */}
+            <p className="sr-only" aria-live="polite">
+              {loadingMore
+                ? "Cargando más publicaciones"
+                : `${posts.length} publicaciones cargadas${hasMore ? "" : ", no hay más"}`}
+            </p>
           </div>
         )}
       </div>
@@ -540,7 +637,9 @@ function ForoContent() {
         onClose={() => setNuevoPostOpen(false)}
         onPostCreado={() => {
           setNuevoPostOpen(false);
-          fetchPosts();
+          // Vuelve a la primera página: el post recién creado va arriba de todo
+          // en "recientes", y quedarse en la página 3 lo escondería.
+          cargarPagina(0, "reemplazar");
         }}
       />
     </div>
