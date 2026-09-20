@@ -23,7 +23,41 @@ export async function POST(request: NextRequest) {
   if (!filePath) return NextResponse.json({ error: 'filePath requerido' }, { status: 400 })
   if (!mimeType) return NextResponse.json({ error: 'mimeType requerido' }, { status: 400 })
 
+  // filePath viene del cuerpo de la petición, o sea que lo elige quien llama.
+  // Sin esta comprobación, un usuario autenticado podía mandar la ruta de otro
+  // y quedarse con su archivo, o repetir la MISMA ruta muchas veces para que
+  // se subiera a Drive una y otra vez, quemando la cuota compartida.
+  //
+  // La ruta la arma /initiate como `temp/<uid>/<archivo>`, así que el prefijo
+  // es prueba de propiedad. Se compara el segmento completo para que un uid
+  // que empiece igual que otro no pase.
+  const prefijoPropio = `temp/${user.id}/`
+  if (!filePath.startsWith(prefijoPropio) || filePath.includes('..')) {
+    return NextResponse.json({ error: 'Ruta de archivo inválida' }, { status: 403 })
+  }
+
   const supabaseAdmin = createAdminClient()
+
+  // Reclamar la ruta ANTES de gastar nada. La clave primaria de upload_claim
+  // vuelve imposible la carrera: si llegan diez peticiones concurrentes con la
+  // misma ruta, sólo una inserta y las otras nueve rebotan acá, sin descargar
+  // ni tocar Drive.
+  //
+  // Sin esto el límite de /initiate no servía para lo que existía: el borrado
+  // del temporal es el ÚLTIMO paso, así que N llamadas paralelas descargaban
+  // todas antes de que alguna borrara y cada una subía su propio archivo a la
+  // cuota compartida de Drive. Una unidad de cuota, subidas ilimitadas.
+  const { error: claimError } = await supabaseAdmin
+    .from('upload_claim')
+    .insert({ file_path: filePath, auth_user_id: user.id })
+
+  if (claimError) {
+    // 23505 = violación de unicidad, o sea que ya la reclamó otra petición.
+    if (claimError.code === '23505') {
+      return NextResponse.json({ error: 'Esta subida ya fue procesada.' }, { status: 409 })
+    }
+    return NextResponse.json({ error: 'No se pudo procesar la subida.' }, { status: 500 })
+  }
 
   try {
     const { data: fileBlob, error: downloadError } = await supabaseAdmin.storage

@@ -1,5 +1,6 @@
 import { createClient } from '@/app/lib/supabase/server'
 import { deleteFromDrive } from '@/app/lib/googleDrive'
+import { consumirLimite, mensajeLimite, LIMITES_REPORTE } from '@/app/lib/rateLimit'
 
 const REPORTES_PARA_ELIMINAR = 3
 
@@ -14,6 +15,17 @@ export async function POST(req: Request) {
   const { archivoId } = await req.json()
   if (!archivoId) {
     return Response.json({ error: 'ID de archivo requerido.' }, { status: 400 })
+  }
+
+  // Una restricción única ya impide reportar el mismo archivo dos veces, pero
+  // no impide reportar cien archivos distintos. Con el umbral en 3, una
+  // bandada de cuentas puede borrar material ajeno; el límite encarece eso.
+  const limite = await consumirLimite('reportar', user.id, LIMITES_REPORTE)
+  if (!limite.permitido) {
+    return Response.json(
+      { error: mensajeLimite(limite.reintentarEnSegundos) },
+      { status: 429, headers: { 'Retry-After': String(limite.reintentarEnSegundos) } },
+    )
   }
 
   const { error: insertError } = await supabase

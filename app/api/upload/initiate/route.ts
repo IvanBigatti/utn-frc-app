@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { createAdminClient } from '@/app/lib/supabase/admin'
+import { consumirLimite, mensajeLimite, LIMITES_SUBIDA } from '@/app/lib/rateLimit'
 
 const MAX_SIZE_BYTES = 20 * 1024 * 1024
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
@@ -9,6 +10,17 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+
+  // El límite se cobra ACÁ y no en /complete: si se cobrara al final, un
+  // atacante podría pedir miles de URLs firmadas gratis y subir a Storage sin
+  // pasar nunca por el cierre.
+  const limite = await consumirLimite('subir', user.id, LIMITES_SUBIDA)
+  if (!limite.permitido) {
+    return NextResponse.json(
+      { error: mensajeLimite(limite.reintentarEnSegundos) },
+      { status: 429, headers: { 'Retry-After': String(limite.reintentarEnSegundos) } },
+    )
+  }
 
   const body = await request.json() as {
     fileName: string
@@ -30,8 +42,11 @@ export async function POST(request: NextRequest) {
   if (!ALLOWED_TYPES.includes(mimeType)) return NextResponse.json({ error: 'Tipo de archivo no permitido' }, { status: 400 })
   if (!fileName) return NextResponse.json({ error: 'Nombre de archivo requerido' }, { status: 400 })
 
+  // La ruta lleva el id del dueño adentro. Antes era `temp/<timestamp>-<nombre>`,
+  // sin dueño, así que cualquier usuario autenticado que adivinara o viera una
+  // ruta ajena podía cerrarla en /complete y quedarse con el archivo de otro.
   const safeName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-  const filePath = `temp/${safeName}`
+  const filePath = `temp/${user.id}/${safeName}`
 
   try {
     const supabaseAdmin = createAdminClient()
