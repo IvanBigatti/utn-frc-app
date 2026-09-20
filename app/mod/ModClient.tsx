@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/app/lib/supabase/client'
 import { eliminarPostMod, eliminarComentarioMod, banearUsuario, buscarUsuarios } from '@/app/actions/moderador'
 import './mod.css'
 
@@ -27,14 +25,21 @@ type ReportedComment = {
   reportCount: number
 }
 
-export default function ModPage() {
-  const supabase = createClient()
-  const router = useRouter()
+export type ModData = {
+  reportedPosts: ReportedPost[]
+  reportedComments: ReportedComment[]
+  authorMap: Record<string, string>
+}
 
-  const [loading, setLoading] = useState(true)
-  const [reportedPosts, setReportedPosts] = useState<ReportedPost[]>([])
-  const [reportedComments, setReportedComments] = useState<ReportedComment[]>([])
-  const [authorMap, setAuthorMap] = useState<Record<string, string>>({})
+export default function ModClient({ data }: { data: ModData }) {
+
+  // Llegan resueltos en el HTML. Antes eran cinco tandas encadenadas desde el
+  // navegador — sesión, chequeo de moderador, tablas de reportes, resúmenes,
+  // nombres — a ~200ms cada una desde Argentina. Siguen siendo estado porque
+  // la pantalla los saca de la lista al eliminar o banear.
+  const [reportedPosts, setReportedPosts] = useState<ReportedPost[]>(data.reportedPosts)
+  const [reportedComments, setReportedComments] = useState<ReportedComment[]>(data.reportedComments)
+  const authorMap = data.authorMap
   const [banForms, setBanForms] = useState<Record<string, string>>({})
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -49,77 +54,6 @@ export default function ModPage() {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3500)
   }
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.replace('/login'); return }
-
-    const { data: modData } = await supabase.from('moderadores').select('user_id').eq('user_id', user.id).maybeSingle()
-    if (!modData) { router.replace('/'); return }
-
-    const [{ data: postReportRows }, { data: commentReportRows }] = await Promise.all([
-      supabase.from('foro_report').select('post_id'),
-      supabase.from('foro_comment_report').select('comment_id'),
-    ])
-
-    const postCounts: Record<number, number> = {}
-    postReportRows?.forEach((r: { post_id: number }) => { postCounts[r.post_id] = (postCounts[r.post_id] ?? 0) + 1 })
-    const commentCounts: Record<number, number> = {}
-    commentReportRows?.forEach((r: { comment_id: number }) => { commentCounts[r.comment_id] = (commentCounts[r.comment_id] ?? 0) + 1 })
-
-    const reportedPostIds = Object.keys(postCounts).map(Number)
-    const reportedCommentIds = Object.keys(commentCounts).map(Number)
-
-    const [postsRes, commentsRes] = await Promise.all([
-      reportedPostIds.length > 0
-        ? supabase.from('foro_post_summary').select('id, titulo, contenido, auth_user_id, anonimo, created_at').in('id', reportedPostIds)
-        : Promise.resolve({ data: [] as { id: number; titulo: string; contenido: string; auth_user_id: string; anonimo: boolean; created_at: string }[] }),
-      reportedCommentIds.length > 0
-        ? supabase.from('foro_comment_summary').select('id, contenido, post_id, auth_user_id, anonimo, created_at').in('id', reportedCommentIds)
-        : Promise.resolve({ data: [] as { id: number; contenido: string; post_id: number; auth_user_id: string; anonimo: boolean; created_at: string }[] }),
-    ])
-
-    const posts: ReportedPost[] = (postsRes.data ?? []).map(p => ({
-      postId: p.id,
-      titulo: p.titulo,
-      contenido: p.contenido,
-      auth_user_id: p.auth_user_id,
-      anonimo: p.anonimo,
-      created_at: p.created_at,
-      reportCount: postCounts[p.id] ?? 0,
-    }))
-
-    const comments: ReportedComment[] = (commentsRes.data ?? []).map(c => ({
-      commentId: c.id,
-      contenido: c.contenido,
-      post_id: c.post_id,
-      auth_user_id: c.auth_user_id,
-      anonimo: c.anonimo,
-      created_at: c.created_at,
-      reportCount: commentCounts[c.id] ?? 0,
-    }))
-
-    setReportedPosts(posts)
-    setReportedComments(comments)
-
-    const uids = [...new Set([
-      ...posts.filter(p => !p.anonimo).map(p => p.auth_user_id),
-      ...comments.filter(c => !c.anonimo).map(c => c.auth_user_id),
-    ])]
-    if (uids.length > 0) {
-      const { data: displayRes } = await supabase.rpc('get_user_display_names', { user_ids: uids })
-      const map: Record<string, string> = {}
-      ;(displayRes ?? []).forEach((row: { id: string; display_name: string }) => {
-        map[row.id] = row.display_name
-      })
-      setAuthorMap(map)
-    }
-
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { fetchData() }, [fetchData])
 
   const handleEliminarPost = async (postId: number) => {
     const result = await eliminarPostMod(postId)
@@ -162,10 +96,6 @@ export default function ModPage() {
     setSearchResults(results)
     setSearchLoading(false)
     setSearchDone(true)
-  }
-
-  if (loading) {
-    return <div className="mod-loading">Cargando panel de moderación...</div>
   }
 
   const totalReportes = reportedPosts.length + reportedComments.length
