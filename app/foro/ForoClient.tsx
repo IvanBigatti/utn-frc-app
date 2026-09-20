@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/app/lib/supabase/client";
@@ -45,28 +45,41 @@ type SortOrder = "recientes" | "votados";
 // pedir la segunda página, y chico para que la primera llegue rápido.
 const PAGE_SIZE = 20;
 
-function ForoContent() {
+export type ForoData = {
+  posts: Post[];
+  authorMap: Record<string, AuthorInfo>;
+  userVotes: Record<number, 1 | -1>;
+  hasMore: boolean;
+  userId: string | null;
+  esMod: boolean;
+};
+
+export default function ForoClient({ data }: { data: ForoData }) {
   const supabase = createClient();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [posts, setPosts] = useState<Post[]>([]);
+  // La primera página llega dentro del HTML. Antes el navegador la pedía
+  // después de montar: sesión, chequeo de moderador, posts y autores, todo
+  // desde Argentina a ~200ms por viaje. Las páginas siguientes y los cambios
+  // de filtro SÍ siguen siendo del cliente, porque los dispara la persona.
+  const [posts, setPosts] = useState<Post[]>(data.posts);
   // Ids tal como los devolvió la última consulta al servidor. Ver el efecto
   // de votos más abajo para por qué no se derivan de `posts`.
-  const [fetchedIdsKey, setFetchedIdsKey] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [fetchedIdsKey, setFetchedIdsKey] = useState(data.posts.map((p) => p.id).join(","));
+  const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(data.hasMore);
   const [filtroOpen, setFiltroOpen] = useState(false);
   const [nuevoPostOpen, setNuevoPostOpen] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [esMod, setEsMod] = useState(false);
+  const userId = data.userId;
+  const esMod = data.esMod;
   const [sortOrder, setSortOrder] = useState<SortOrder>(
     (searchParams.get("sort") as SortOrder | null) ?? "recientes"
   );
-  const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>({});
-  const [authorMap, setAuthorMap] = useState<Record<string, AuthorInfo>>({});
+  const [userVotes, setUserVotes] = useState<Record<number, 1 | -1>>(data.userVotes);
+  const [authorMap, setAuthorMap] = useState<Record<string, AuthorInfo>>(data.authorMap);
 
   const [filtros, setFiltros] = useState<Filtros>(() => ({
     carreraId: searchParams.get("carreraId") ? Number(searchParams.get("carreraId")) : null,
@@ -99,19 +112,13 @@ function ForoContent() {
     if (filtros.tipo)      params.set("tipo",      filtros.tipo);
     if (sortOrder !== "recientes") params.set("sort", sortOrder);
     const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [filtros, sortOrder, pathname, router]);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const uid = session?.user?.id ?? null;
-      setUserId(uid);
-      if (uid) {
-        const { data } = await supabase.from("moderadores").select("user_id").eq("user_id", uid).maybeSingle();
-        setEsMod(!!data);
-      }
-    });
-  }, []);
+    // history.replaceState y no router.replace: replaceState se integra con el
+    // router y sincroniza useSearchParams SIN pedirle nada al servidor. Con
+    // router.replace, ahora que la página es un componente de servidor, cada
+    // cambio de filtro dispararía un render del servidor ADEMÁS de la consulta
+    // del cliente: la misma página traída dos veces.
+    window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
+  }, [filtros, sortOrder, pathname]);
 
   // Trae UNA página. Antes traía la tabla entera: sin `.range()` el navegador
   // se bajaba todos los posts que existieran, con el cuerpo completo de cada
@@ -214,9 +221,26 @@ function ForoContent() {
     setLoadingMore(false);
   }, [filtros, sortOrder]);
 
-  // Cambiar filtros u orden arranca de cero.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { cargarPagina(0, "reemplazar"); }, [cargarPagina]);
+  // Cambiar filtros u orden arranca de cero, pero la combinación que el
+  // servidor ya renderizó no se vuelve a pedir.
+  //
+  // No alcanza con un ref booleano de "primera vuelta". En desarrollo React
+  // corre los efectos dos veces a propósito (monta, limpia, vuelve a montar) y
+  // los refs sobreviven a eso, así que la primera vuelta se salteaba y la
+  // segunda disparaba igual: el doble fetch volvía, sólo que invisible en
+  // producción. Se guarda CUÁL combinación se trajo por última vez, arrancando
+  // por la que mandó el servidor. Comparar valores es idempotente: correr el
+  // efecto dos veces con la misma clave no cambia nada.
+  const claveConsulta = JSON.stringify([filtros, sortOrder]);
+  const ultimaClaveRef = useRef(claveConsulta);
+  useEffect(() => {
+    if (claveConsulta === ultimaClaveRef.current) return;
+    ultimaClaveRef.current = claveConsulta;
+    // Cargar en respuesta a un cambio de filtro es exactamente para lo que
+    // existe este efecto; la regla apunta a otra cosa.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cargarPagina(0, "reemplazar");
+  }, [claveConsulta, cargarPagina]);
 
   const cargarMas = () => {
     if (loadingMore || !hasMore) return;
@@ -240,7 +264,16 @@ function ForoContent() {
   // —votar, borrar un post propio, banear a alguien— y derivar la clave de ahí
   // hacía que cada borrado disparara una consulta de votos al pedo. Atada a la
   // respuesta del servidor, sólo cambia cuando de verdad hay posts nuevos.
+  // Mismo criterio que arriba: se recuerda para qué usuario y qué ids se
+  // trajeron los votos, arrancando por lo que sembró el servidor. Un ref
+  // booleano no sirve por el doble montaje de desarrollo.
+  const claveVotos = `${userId ?? ""}|${fetchedIdsKey}`;
+  const ultimaClaveVotosRef = useRef(claveVotos);
   useEffect(() => {
+    if (claveVotos === ultimaClaveVotosRef.current) return;
+    ultimaClaveVotosRef.current = claveVotos;
+    // Limpiar los votos al desloguearse o quedarse sin posts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!userId || !fetchedIdsKey) { setUserVotes({}); return; }
     let cancelled = false;
     const run = async () => {
@@ -267,7 +300,7 @@ function ForoContent() {
     };
     run();
     return () => { cancelled = true; };
-  }, [userId, fetchedIdsKey]);
+  }, [claveVotos, userId, fetchedIdsKey]);
 
   const handleVote = async (e: React.MouseEvent, postId: number, value: 1 | -1) => {
     e.stopPropagation();
@@ -646,10 +679,3 @@ function ForoContent() {
   );
 }
 
-export default function ForoPage() {
-  return (
-    <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>Cargando...</div>}>
-      <ForoContent />
-    </Suspense>
-  );
-}
